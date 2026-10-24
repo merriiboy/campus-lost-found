@@ -6,7 +6,7 @@ import type {
   ReturnedHistoryRecord,
 } from "./data/appData";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://campus-lost-found-ghvc.onrender.com";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 
 

@@ -220,13 +220,10 @@ async function fetchJson(
   const queryString = buildQueryParams(query);
   const url = `${API_BASE_URL}${path}${queryString ? `?${queryString}` : ""}`;
 
-  const token = localStorage.getItem("accessToken");
-
   const response = await fetch(url, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });
@@ -309,6 +306,7 @@ export async function getHistory(): Promise<{
   };
 }
 
+
 export type ReportItemInput = {
   type: "lost" | "found";
   name: string;
@@ -329,43 +327,9 @@ export type ReportItemInput = {
   staffPhone?: string;
   staffEmail?: string;
 };
-export async function updateItemStatus(
-  type: "lost" | "found",
-  id: string,
-  payload:
-    | {
-      status: "Not Returned" | "Returned";
-      returnedBy?: string;
-      returnedRollNo?: string;
-    }
-    | {
-      status: "Not Returned" | "Returned";
-      claimedBy?: string;
-      claimedRollNo?: string;
-      claimedPhone?: string;
-      claimedEmail?: string;
-    }
-) {
-  const path =
-    type === "lost"
-      ? `/api/items/lost/${id}`
-      : `/api/items/found/${id}`;
 
-  return fetchJson(
-    path,
-    {},
-    {
-      method: "PUT",
-      body: JSON.stringify(payload),
-    }
-  );
-}
-
-export async function reportItem(
-  input: ReportItemInput
-): Promise<AdminLostItem | AdminFoundItem> {
+export async function reportItem(input: ReportItemInput): Promise<AdminLostItem | AdminFoundItem> {
   const isLost = input.type === "lost";
-
   const payload = {
     name: input.name,
     description: input.description,
@@ -373,81 +337,25 @@ export async function reportItem(
     customCategory: input.customCategory,
     location: input.location,
     contactType: input.contactType,
-
-
-    ...(input.contactType === "student"
-      ? {
-        studentName: input.studentName,
-        rollNo: input.rollNo,
-        studentPhone: input.studentPhone,
-        studentEmail: input.studentEmail,
-      }
-      : {
-        staffName: input.staffName,
-        employeeId: input.employeeId,
-        department: input.department,
-        staffPhone: input.staffPhone,
-        staffEmail: input.staffEmail,
-      }),
-
+    studentName: input.studentName,
+    rollNo: input.rollNo,
+    studentPhone: input.studentPhone,
+    studentEmail: input.studentEmail,
+    staffName: input.staffName,
+    employeeId: input.employeeId,
+    department: input.department,
+    staffPhone: input.staffPhone,
+    staffEmail: input.staffEmail,
     ...(isLost
-      ? {
-        dateLost: input.date,
-      }
-      : {
-        dateFound: input.date,
-        collectFrom: input.collectFrom,
-      }),
-
-
+      ? { dateLost: input.date }
+      : { dateFound: input.date, collectFrom: input.collectFrom }),
   };
 
-  const response = await fetchJson(
-    isLost
-      ? "/api/items/lost/report"
-      : "/api/items/found/report",
-    {},
-    {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }
-  );
-
-  return isLost
-    ? mapAdminLostItem(response?.data)
-    : mapAdminFoundItem(response?.data);
-}
-export async function loginAdmin(
-  email: string,
-  password: string
-) {
-  const response = await fetchJson(
-    "/api/auth/login",
-    {},
-    {
-      method: "POST",
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-    }
-  );
-
-  if (response?.data?.accessToken) {
-    localStorage.setItem(
-      "accessToken",
-      response.data.accessToken
-    );
-  }
-
-  if (response?.data?.refreshToken) {
-    localStorage.setItem(
-      "refreshToken",
-      response.data.refreshToken
-    );
-  }
-
-  return response;
+  const response = await fetchJson(isLost ? "/api/items/lost/report" : "/api/items/found/report", {}, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return isLost ? mapAdminLostItem(response?.data) : mapAdminFoundItem(response?.data);
 }
 
 // ─── Status Update Endpoints ────────────────────────────────────────────────
@@ -459,7 +367,13 @@ export async function updateLostItemStatus(
 ): Promise<void> {
   await fetchJson(`/api/items/lost/${id}`, {}, {
     method: "PUT",
-    body: JSON.stringify({ status: "Returned", returnedBy, returnedRollNo }),
+    body: JSON.stringify({
+      status: "Returned",
+      returnedBy,
+      returnedRollNo,
+      claimedBy: returnedBy,
+      claimedRollNo: returnedRollNo,
+    }),
   });
 }
 

@@ -181,23 +181,30 @@ export const schemas = {
     ...contactValidation,
   }),
 
-  // Update item status
-  updateStatusSchema: Joi.object({
+  // Update lost item status
+  updateLostStatusSchema: Joi.object({
     status: Joi.string()
       .valid("Not Returned", "Returned")
       .required(),
-    // Lost item update status fields
-    returnedBy: nameValidator.optional().allow(""),
+    returnedBy: Joi.string().trim().optional().allow(""),
     returnedRollNo: Joi.string().trim().optional().allow(""),
-    // Found item update status fields
+    claimedBy: Joi.string().trim().optional().allow(""),
+    claimedRollNo: Joi.string().trim().optional().allow(""),
+    claimedPhone: Joi.string().trim().optional().allow(""),
+    claimedEmail: Joi.string().trim().optional().allow(""),
+  }),
+
+  // Update found item status
+  updateFoundStatusSchema: Joi.object({
+    status: Joi.string()
+      .valid("Not Returned", "Returned")
+      .required(),
     claimedBy: Joi.string()
       .trim()
-      .min(8)
+      .min(2)
       .max(100)
-      .pattern(/^[a-zA-Z\s]+$/)
       .messages({
-        "string.pattern.base": '"Student Name" can only contain letters and spaces',
-        "string.min": '"Student Name" must be at least 8 characters',
+        "string.min": '"Student Name" must be at least 2 characters',
         "string.max": '"Student Name" must not exceed 100 characters',
       })
       .when("status", {
@@ -207,14 +214,7 @@ export const schemas = {
       }),
     claimedRollNo: Joi.string()
       .trim()
-      .min(7)
-      .max(30)
-      .pattern(/^[a-z0-9]+$/)
-      .messages({
-        "string.pattern.base": "Only lowercase alphanumeric characters allowed",
-        "string.min": '"Roll Number" must be at least 7 characters',
-        "string.max": '"Roll Number" must not exceed 30 characters',
-      })
+      .max(50)
       .when("status", {
         is: "Returned",
         then: Joi.required(),
@@ -222,24 +222,31 @@ export const schemas = {
       }),
     claimedPhone: Joi.string()
       .trim()
-      .pattern(/^\d{10}$/)
-      .messages({
-        "string.pattern.base": "Phone Number must contain exactly 10 digits",
-      })
-      .when("status", {
-        is: "Returned",
-        then: Joi.required(),
-        otherwise: Joi.optional().allow(""),
-      }),
+      .optional()
+      .allow(""),
     claimedEmail: Joi.string()
       .trim()
       .email()
       .lowercase()
-      .when("status", {
-        is: "Returned",
-        then: Joi.required(),
-        otherwise: Joi.optional().allow(""),
-      }),
+      .optional()
+      .allow(""),
+    returnedBy: Joi.string().trim().optional().allow(""),
+    returnedRollNo: Joi.string().trim().optional().allow(""),
+  }),
+
+  // Update item status (general fallback for both lost and found)
+  updateStatusSchema: Joi.object({
+    status: Joi.string()
+      .valid("Not Returned", "Returned")
+      .required(),
+    // Lost item update status fields
+    returnedBy: Joi.string().trim().optional().allow(""),
+    returnedRollNo: Joi.string().trim().optional().allow(""),
+    // Found item update status fields
+    claimedBy: Joi.string().trim().optional().allow(""),
+    claimedRollNo: Joi.string().trim().optional().allow(""),
+    claimedPhone: Joi.string().trim().optional().allow(""),
+    claimedEmail: Joi.string().trim().optional().allow(""),
   }),
 
   // Mark as disposed

@@ -367,7 +367,13 @@ export async function updateLostItemStatus(
 ): Promise<void> {
   await fetchJson(`/api/items/lost/${id}`, {}, {
     method: "PUT",
-    body: JSON.stringify({ status: "Returned", returnedBy, returnedRollNo }),
+    body: JSON.stringify({
+      status: "Returned",
+      returnedBy,
+      returnedRollNo,
+      claimedBy: returnedBy,
+      claimedRollNo: returnedRollNo,
+    }),
   });
 }
 

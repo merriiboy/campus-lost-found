@@ -60,7 +60,7 @@ router.get(
  */
 router.put(
   "/:id",
-  validateRequest(schemas.updateStatusSchema),
+  validateRequest(schemas.updateFoundStatusSchema),
   catchAsync(FoundItemController.updateStatus)
 );
 

@@ -86,13 +86,13 @@ export class LostItemController {
     res: Response
   ): Promise<void> {
     const { id } = req.params;
-    const { status, returnedBy, returnedRollNo } = req.body;
+    const { status, returnedBy, returnedRollNo, claimedBy, claimedRollNo } = req.body;
 
     const item = await LostItemService.updateStatus(
       id,
       status,
-      returnedBy,
-      returnedRollNo
+      returnedBy || claimedBy,
+      returnedRollNo || claimedRollNo
     );
 
     res.status(200).json({

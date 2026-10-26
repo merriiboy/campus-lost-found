@@ -1,7 +1,5 @@
 import { useState } from "react";
-import { Mail, Lock, AlertCircle, ArrowLeft, Eye, EyeOff } from "lucide-react";
-import campusLogo from "../../imports/KJUSYS2-1.png";
-import { loginAdmin } from "../api";
+import { Mail, Lock, AlertCircle, ArrowLeft, Eye, EyeOff, Package } from "lucide-react";
 
 interface LoginPageProps {
   onLogin: (mode: "student" | "admin") => void;
@@ -15,7 +13,6 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
   const [emailError, setEmailError]       = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [showPassword, setShowPassword]   = useState(false);
-  const [isLoading, setIsLoading]         = useState(false);
 
   const validateEmailField = (val: string) => {
     const trimmed = val.trim();
@@ -31,10 +28,8 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
     return "";
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading) return;
-
     const emailErr = validateEmailField(email);
     const passwordErr = validatePasswordField(password);
 
@@ -61,31 +56,7 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
       onLogin("admin");
       return;
     }
-
-    setIsLoading(true);
-
-    try {
-      await loginAdmin(trimmedEmail, trimmedPassword);
-      onLogin("admin");
-    } catch (error: any) {
-      if (error.details && Array.isArray(error.details)) {
-        error.details.forEach((det: any) => {
-          if (det.field === "email") {
-            setEmailError(det.message);
-          } else if (det.field === "password") {
-            setPasswordError(det.message);
-          }
-        });
-      } else {
-        setError(
-          error instanceof Error
-            ? error.message
-            : "Invalid admin credentials"
-        );
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    setError("Invalid admin credentials. Please try again.");
   };
 
   const getEmailInputCls = () => {
@@ -130,12 +101,13 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
           {/* Inner padded content */}
           <div className="px-10 pt-12 pb-10">
             {/* Logo — centered */}
-            <div className="flex justify-center mb-8">
-              <img
-                src={campusLogo}
-                alt="Kristu Jayanti University"
-                className="h-12 object-contain"
-              />
+            <div className="flex flex-col items-center justify-center gap-2 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-600 to-teal-500 flex items-center justify-center text-white shadow-lg shadow-cyan-500/25">
+                <Package size={28} />
+              </div>
+              <h2 className="text-xl font-bold text-slate-800" style={{ fontFamily: "Outfit, sans-serif" }}>
+                Campus Lost &amp; Found
+              </h2>
             </div>
 
             {/* Heading */}
@@ -236,11 +208,28 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
               <div className="pt-1">
                 <button
                   type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3 rounded-full text-white text-sm font-semibold transition-all duration-200 hover:opacity-90 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full py-3 rounded-full text-white text-sm font-semibold transition-all duration-200 hover:opacity-90 active:scale-[0.98]"
                   style={{ background: "#0891b2", fontFamily: "DM Sans, sans-serif", fontSize: "0.95rem" }}
                 >
-                  {isLoading ? "Signing In..." : "Sign In"}
+                  Sign In
+                </button>
+              </div>
+
+              {/* Demo credentials hint */}
+              <div className="mt-3 flex items-center justify-between text-xs text-gray-500 bg-cyan-50/70 border border-cyan-100 rounded-xl px-3 py-2">
+                <span>Demo: <b className="text-gray-700">admin@campus.edu</b> / <b className="text-gray-700">admin123</b></span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail("admin@campus.edu");
+                    setPassword("admin123");
+                    setEmailError("");
+                    setPasswordError("");
+                    setError("");
+                  }}
+                  className="text-cyan-700 hover:underline font-semibold"
+                >
+                  Auto-fill
                 </button>
               </div>
             </form>

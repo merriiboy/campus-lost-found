@@ -235,10 +235,6 @@ export const schemas = {
       .trim()
       .email()
       .lowercase()
-      .pattern(/^[a-z0-9._%+-]+@kristujayanti\.com$/)
-      .messages({
-        "string.pattern.base": "Only @kristujayanti.com domain are allowed",
-      })
       .when("status", {
         is: "Returned",
         then: Joi.required(),

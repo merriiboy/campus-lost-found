@@ -1,12 +1,16 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { Search, Package, MapPin, ArrowRight, AlertCircle, ChevronDown } from "lucide-react";
-import collegeLogo from "../../imports/WhatsApp_Image_2026-06-01_at_10.51.49_AM.jpeg";
-import headerCenterImg from "../../imports/WhatsApp_Image_2026-06-01_at_11.03.14_AM.jpeg";
 
 interface LandingPageProps {
   onBrowseLost: () => void;
   onBrowseFound: () => void;
   onAdminLogin: () => void;
+  initialStats?: {
+    total: number;
+    lost: number;
+    found: number;
+    returned: number;
+  };
 }
 
 function StatRing({ pct, color, label, animate = false }: { pct: number; color: string; label: string; animate?: boolean }) {
@@ -83,17 +87,75 @@ const howItWorks = [
   { icon: <Package size={24} />, step: "03", title: "Collect Your Item", desc: "Bring your student ID to the designated office to verify ownership and collect your item.", g: "from-amber-500 to-orange-500", bg: "from-amber-50 to-orange-50", border: "border-amber-100" },
 ];
 
-export default function LandingPage({ onBrowseFound, onAdminLogin }: LandingPageProps) {
-  const [stats, setStats] = useState({
-    total: 0,
-    lost: 0,
-    found: 0,
-    returned: 0,
-  });
-  const [statsLoading, setStatsLoading] = useState(true);
+export default function LandingPage({ onBrowseFound, onAdminLogin, initialStats }: LandingPageProps) {
+  const [stats, setStats] = useState(
+    initialStats || {
+      total: 0,
+      lost: 0,
+      found: 0,
+      returned: 0,
+    }
+  );
+  const [statsLoading, setStatsLoading] = useState(!initialStats);
   const [animateStats, setAnimateStats] = useState(false);
   const statsContainerRef = useRef<HTMLDivElement>(null);
   const statsRef = useRef<HTMLDivElement>(null);
+
+  const fetchStats = useCallback(async () => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+    try {
+      const [lostActive, foundActive, lostReturned, foundReturned] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/items/lost?limit=1&status=Not%20Returned`).then(r => r.json()).catch(() => null),
+        fetch(`${API_BASE_URL}/api/items/found?limit=1&status=Not%20Returned`).then(r => r.json()).catch(() => null),
+        fetch(`${API_BASE_URL}/api/items/lost?limit=1&status=Returned`).then(r => r.json()).catch(() => null),
+        fetch(`${API_BASE_URL}/api/items/found?limit=1&status=Returned`).then(r => r.json()).catch(() => null),
+      ]);
+
+      const countFrom = (res: any) => {
+        if (typeof res?.data?.total === "number") return res.data.total;
+        if (Array.isArray(res?.data?.data)) return res.data.data.length;
+        if (Array.isArray(res?.data?.items)) return res.data.items.length;
+        if (Array.isArray(res?.data)) return res.data.length;
+        return 0;
+      };
+
+      const lostActiveTotal = countFrom(lostActive);
+      const foundActiveTotal = countFrom(foundActive);
+      const lostReturnedTotal = countFrom(lostReturned);
+      const foundReturnedTotal = countFrom(foundReturned);
+
+      setStats({
+        total: lostActiveTotal + foundActiveTotal + lostReturnedTotal + foundReturnedTotal,
+        lost: lostActiveTotal + lostReturnedTotal,
+        found: foundActiveTotal + foundReturnedTotal,
+        returned: lostReturnedTotal + foundReturnedTotal,
+      });
+    } catch (err) {
+      console.error("Failed to fetch live statistics:", err);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStats();
+
+    // Auto-refresh stats when window gains focus or tab becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchStats();
+      }
+    };
+
+    window.addEventListener("focus", fetchStats);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", fetchStats);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [fetchStats]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -112,32 +174,6 @@ export default function LandingPage({ onBrowseFound, onAdminLogin }: LandingPage
 
     return () => observer.disconnect();
   }, [statsLoading]);
-
-  useEffect(() => {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://campus-lost-found-ghvc.onrender.com";
-
-    Promise.all([
-      fetch(`${API_BASE_URL}/api/items/lost?limit=1&status=Not%20Returned`).then(r => r.json()),
-      fetch(`${API_BASE_URL}/api/items/found?limit=1&status=Not%20Returned`).then(r => r.json()),
-      fetch(`${API_BASE_URL}/api/items/lost?limit=1&status=Returned`).then(r => r.json()),
-      fetch(`${API_BASE_URL}/api/items/found?limit=1&status=Returned`).then(r => r.json()),
-    ])
-      .then(([lostActive, foundActive, lostReturned, foundReturned]) => {
-        const lostActiveTotal = lostActive?.data?.total ?? lostActive?.data?.data?.length ?? 0;
-        const foundActiveTotal = foundActive?.data?.total ?? foundActive?.data?.data?.length ?? 0;
-        const lostReturnedTotal = lostReturned?.data?.total ?? lostReturned?.data?.data?.length ?? 0;
-        const foundReturnedTotal = foundReturned?.data?.total ?? foundReturned?.data?.data?.length ?? 0;
-
-        setStats({
-          total: lostActiveTotal + foundActiveTotal + lostReturnedTotal + foundReturnedTotal,
-          lost: lostActiveTotal + lostReturnedTotal,
-          found: foundActiveTotal + foundReturnedTotal,
-          returned: lostReturnedTotal + foundReturnedTotal,
-        });
-      })
-      .catch(console.error)
-      .finally(() => setStatsLoading(false));
-  }, []);
 
   const TOTAL = stats.total;
   const LOST = stats.lost;
@@ -177,16 +213,15 @@ export default function LandingPage({ onBrowseFound, onAdminLogin }: LandingPage
         <header className="relative shrink-0 bg-white/80 backdrop-blur border-b border-slate-200 shadow-sm z-10">
           <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src={collegeLogo} alt="Kristu Jayanti University" className="h-8 object-contain" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-cyan-500/20 shrink-0">
+                <Package className="w-5 h-5" />
+              </div>
               <div className="border-l-2 border-slate-200 pl-3">
                 <p className="text-slate-900 font-bold text-base leading-tight" style={{ fontFamily: "Outfit, sans-serif" }}>
                   Campus Lost and Found
                 </p>
                 <p className="text-cyan-600 text-xs font-medium">Your Items, Reunited</p>
               </div>
-            </div>
-            <div className="flex-1 flex justify-center">
-              <img src={headerCenterImg} alt="Campus Lost and Found" className="h-10 object-contain" />
             </div>
             <div className="flex items-center gap-3">
 
@@ -368,13 +403,13 @@ export default function LandingPage({ onBrowseFound, onAdminLogin }: LandingPage
                   </svg>
                 </div>
                 <p className="text-sm font-bold text-amber-700 uppercase tracking-widest" style={{ fontFamily: "DM Sans, sans-serif" }}>
-                  University Policy
+                  Campus Policy
                 </p>
               </div>
               <p className="text-sm text-amber-900 leading-relaxed" style={{ fontFamily: "DM Sans, sans-serif" }}>
                 If an item remains unclaimed after{" "}
                 <span className="font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-md">60 days</span>,
-                {" "}it may be donated, recycled, disposed of, or otherwise handled in accordance with university policies and guidelines.
+                {" "}it may be donated, recycled, disposed of, or otherwise handled in accordance with campus policies and guidelines.
               </p>
             </div>
           </div>

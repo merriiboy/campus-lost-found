@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Mail, Lock, AlertCircle, ArrowLeft, Eye, EyeOff } from "lucide-react";
-import campusLogo from "../../imports/KJUSYS2-1.png";
+import { Mail, Lock, AlertCircle, ArrowLeft, Eye, EyeOff, Package } from "lucide-react";
 
 interface LoginPageProps {
   onLogin: (mode: "student" | "admin") => void;
@@ -102,12 +101,13 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
           {/* Inner padded content */}
           <div className="px-10 pt-12 pb-10">
             {/* Logo — centered */}
-            <div className="flex justify-center mb-8">
-              <img
-                src={campusLogo}
-                alt="Kristu Jayanti University"
-                className="h-12 object-contain"
-              />
+            <div className="flex flex-col items-center justify-center gap-2 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-600 to-teal-500 flex items-center justify-center text-white shadow-lg shadow-cyan-500/25">
+                <Package size={28} />
+              </div>
+              <h2 className="text-xl font-bold text-slate-800" style={{ fontFamily: "Outfit, sans-serif" }}>
+                Campus Lost &amp; Found
+              </h2>
             </div>
 
             {/* Heading */}

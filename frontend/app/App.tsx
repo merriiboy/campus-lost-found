@@ -12,7 +12,6 @@ import {
 import { CardNameTooltip } from "./components/CardNameTooltip";
 import ClaimCountdownBar from "./components/ClaimCountdownBar";
 import { ScrollToTopButton } from "./components/ScrollToTopButton";
-import campusLogo from "../imports/afa90946107debb396ffdb7284683a17-1.jpg";
 import { getAdminFoundItems, getAdminLostItems, getBrowseItems, getHistory, reportItem, updateLostItemStatus, updateFoundItemStatus, deleteLostItem, markItemDisposed } from "./api";
 import {
   categories,
@@ -118,13 +117,10 @@ function validateReturnPhone(phone: string): string | null {
 
 function validateReturnEmail(email: string, rollNo: string): string | null {
   const trimmed = email.trim().toLowerCase();
-  if (!trimmed) return "Please enter a college email address.";
-  if (!trimmed.endsWith("@kristujayanti.com") || /\s/.test(trimmed)) {
-    return "Only @kristujayanti.com domain are allowed.";
-  }
-  const username = trimmed.split("@")[0];
-  if (username !== rollNo.trim().toLowerCase()) {
-    return "Email must match the entered Roll Number.";
+  if (!trimmed) return "Please enter an email address.";
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(trimmed)) {
+    return "Please enter a valid email address.";
   }
   return null;
 }
@@ -321,12 +317,9 @@ function UploadPage({ onBack, onItemCreated }: { onBack: () => void; onItemCreat
       case "email":
         if (isStudent) {
           if (!trimmed) return "Email address is required.";
-          if (!trimmed.endsWith("@kristujayanti.com") || trimmed !== trimmed.toLowerCase() || /\s/.test(value)) {
-            return "Only @kristujayanti.com domain are allowed.";
-          }
-          const username = trimmed.substring(0, trimmed.indexOf("@"));
-          if (username !== form.rollNo) {
-            return "Email must match the entered Roll Number.";
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(trimmed)) {
+            return "Please enter a valid email address.";
           }
         }
         return null;
@@ -366,12 +359,9 @@ function UploadPage({ onBack, onItemCreated }: { onBack: () => void; onItemCreat
       case "staffEmail":
         if (!isStudent) {
           if (!trimmed) return "Email address is required.";
-          if (!trimmed.endsWith("@kristujayanti.com") || trimmed !== trimmed.toLowerCase() || /\s/.test(value)) {
-            return "Only @kristujayanti.com domain are allowed.";
-          }
-          const username = trimmed.substring(0, trimmed.indexOf("@"));
-          if (username !== form.employeeId) {
-            return "Email must match the entered Staff ID.";
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(trimmed)) {
+            return "Please enter a valid email address.";
           }
         }
         return null;
@@ -1194,7 +1184,9 @@ function PublicBrowseView({ type, onBack }: { type: "lost" | "found"; onBack: ()
             Back to Home
           </button>
           <div className="flex items-center gap-3">
-            <img src={campusLogo} alt="Campus Logo" className="w-8 h-8 object-contain" />
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-teal-500 flex items-center justify-center text-white shadow-sm shrink-0">
+              <Package size={18} />
+            </div>
             <p className="text-gray-900 font-semibold text-sm" style={{ fontFamily: "Outfit, sans-serif" }}>Campus Lost and Found</p>
           </div>
         </div>
@@ -1228,41 +1220,45 @@ const ITEM_SYNONYMS: Record<string, string[]> = {
   keys: ["key", "keychain", "key ring", "keyring", "locket", "lanyard key"],
   key: ["keys", "keychain", "key ring", "keyring"],
   charger: ["adapter", "cable", "power adapter", "charging cable", "plug"],
-  earphones: ["earbuds", "headphones", "headset", "airpods", "earpiece", "in-ear", "buds"],
-  headphones: ["earphones", "earbuds", "headset", "over-ear"],
+  earphones: ["earbuds", "headphones", "headset", "airpods", "earpiece", "in-ear", "buds", "earphone"],
+  earphone: ["earbuds", "headphones", "headset", "airpods", "earpiece", "in-ear", "buds", "earphones"],
+  earbuds: ["earphone", "earphones", "headphones", "headset", "airpods", "buds"],
+  earbud: ["earphone", "earphones", "headphones", "headset", "airpods", "buds"],
+  headphones: ["earphones", "earbuds", "headset", "over-ear", "headphone"],
+  headphone: ["earphones", "earbuds", "headset", "over-ear", "headphones"],
   umbrella: ["raincoat", "rain cover"],
-  book: ["notebook", "textbook", "notes", "journal", "diary", "workbook"],
-  notebook: ["book", "notes", "journal", "copy", "notepad"],
-  pen: ["pencil", "marker", "ballpoint", "ink pen", "sketch pen", "highlighter"],
-  pencil: ["pen", "eraser", "sketch"],
+  book: ["notebook", "textbook", "notes", "journal", "diary", "workbook", "books"],
+  books: ["notebook", "textbook", "notes", "journal", "diary", "workbook", "book"],
+  notebook: ["book", "books", "notes", "journal", "copy", "notepad", "notebooks"],
+  notebooks: ["book", "books", "notes", "journal", "copy", "notepad", "notebook"],
+  pen: ["pencil", "marker", "ballpoint", "ink pen", "sketch pen", "highlighter", "pens"],
+  pens: ["pencil", "marker", "ballpoint", "ink pen", "sketch pen", "highlighter", "pen"],
+  pencil: ["pen", "eraser", "sketch", "pencils"],
+  pencils: ["pen", "eraser", "sketch", "pencil"],
   calculator: ["calc", "scientific calculator"],
-  laptop: ["computer", "pc", "macbook", "notebook computer", "chromebook"],
-  watch: ["wristwatch", "timepiece", "clock", "smartwatch"],
+  laptop: ["computer", "pc", "macbook", "notebook computer", "chromebook", "laptops"],
+  laptops: ["computer", "pc", "macbook", "notebook computer", "chromebook", "laptop"],
+  watch: ["wristwatch", "timepiece", "clock", "smartwatch", "watches"],
+  watches: ["wristwatch", "timepiece", "clock", "smartwatch", "watch"],
   id: ["id card", "identity card", "student id", "college id", "college card", "access card", "pass"],
   "id card": ["identity card", "student id", "college card", "access card", "id"],
   earring: ["earrings", "stud", "hoop", "jewelry"],
+  earrings: ["earring", "stud", "hoop", "jewelry"],
   necklace: ["chain", "pendant", "locket", "jewelry"],
-  ring: ["band", "finger ring", "jewelry"],
+  ring: ["band", "finger ring", "jewelry", "rings"],
+  rings: ["band", "finger ring", "jewelry", "ring"],
   bracelet: ["bangle", "wristband", "jewelry"],
 };
 
-/**
- * Returns all synonym terms for a query word (including itself).
- */
 function getSynonymTerms(word: string): string[] {
   const lower = word.toLowerCase();
   const synonyms = ITEM_SYNONYMS[lower] || [];
-  // Also check if the word appears as a synonym value in any entry
   const reverseMatches = Object.entries(ITEM_SYNONYMS)
     .filter(([, syns]) => syns.some(s => s.toLowerCase() === lower))
     .map(([key]) => key);
   return [lower, ...synonyms.map(s => s.toLowerCase()), ...reverseMatches];
 }
 
-/**
- * Intelligent multi-strategy item name/description matcher.
- * Strategies: exact, partial, keyword, synonym.
- */
 function matchesSearch(item: BrowseItem, query: string): boolean {
   if (!query) return true;
   const q = query.trim().toLowerCase();
@@ -1274,17 +1270,12 @@ function matchesSearch(item: BrowseItem, query: string): boolean {
     item.category,
   ].join(" ").toLowerCase();
 
-  // 1. Exact match
   if (haystack === q) return true;
-
-  // 2. Partial/substring match
   if (haystack.includes(q)) return true;
 
-  // 3. Keyword match: all words in query appear somewhere in haystack
   const queryWords = q.split(/\s+/).filter(Boolean);
   if (queryWords.length > 1 && queryWords.every(w => haystack.includes(w))) return true;
 
-  // 4. Synonym matching: expand each query word through synonym map
   for (const word of queryWords) {
     const terms = getSynonymTerms(word);
     if (terms.some(term => haystack.includes(term))) return true;
@@ -1319,96 +1310,73 @@ function CombinedItemsPage({ initialFilter = "all" }: { initialFilter?: "all" | 
   const [selectedCategory, setSelectedCategory] = useState("");
   const [isCategoryFocused, setIsCategoryFocused] = useState(false);
   const [isStatusFocused, setIsStatusFocused] = useState(false);
-  // "Others" keyword search — client-side sub-filter for custom category text
-  const [othersKeyword, setOthersKeyword] = useState("");
-
   const [countdownFilter, setCountdownFilter] = useState("");
-  const [dateFromInput, setDateFromInput] = useState("");
-  const [dateFromQuery, setDateFromQuery] = useState("");
-  const [dateError, setDateError] = useState<string | null>(null);
+  const [dateFromInput, setDateFromInput] = useState(getTodayDateString());
+  const [dateFromQuery, setDateFromQuery] = useState(getTodayDateString());
   const [dateTo, setDateTo] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [backendItems, setBackendItems] = useState<BrowseItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Track the previous query key to prevent duplicate API calls
-  const prevQueryKeyRef = useRef<string | null>(null);
-  // AbortController ref for cancelling in-flight requests
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  // Clear othersKeyword when category changes away from "Others"
-  useEffect(() => {
-    if (selectedCategory !== "Others") {
-      setOthersKeyword("");
-    }
-  }, [selectedCategory]);
-
-  // Debounce and validate Search input — only update debouncedSearch when ≥3 chars
+  // Debounce and validate Search input
   useEffect(() => {
     const trimmed = searchInput.trim();
     if (trimmed.length === 0) {
       setSearchError(null);
-      const handler = setTimeout(() => setDebouncedSearch(""), 500);
+      const handler = setTimeout(() => {
+        setDebouncedSearch("");
+      }, 400);
       return () => clearTimeout(handler);
     }
+
     if (trimmed.length < 3) {
       setSearchError("Please enter at least 3 characters to search.");
-      // Don't update debouncedSearch — leave previous value to avoid stale API call
+      // Don't update debouncedSearch for 1 or 2 characters to avoid triggering API call
       return;
     }
+
     setSearchError(null);
-    const handler = setTimeout(() => setDebouncedSearch(trimmed), 500);
+    const handler = setTimeout(() => {
+      setDebouncedSearch(trimmed);
+    }, 400);
+
     return () => clearTimeout(handler);
   }, [searchInput]);
 
-  // Debounce and validate Location input — only update debouncedLocation when ≥3 chars
+  // Debounce and validate Location input
   useEffect(() => {
     const trimmed = locationInput.trim();
     if (trimmed.length === 0) {
       setLocationError(null);
-      const handler = setTimeout(() => setDebouncedLocation(""), 500);
+      const handler = setTimeout(() => {
+        setDebouncedLocation("");
+      }, 400);
       return () => clearTimeout(handler);
     }
+
     if (trimmed.length < 3) {
       setLocationError("Please enter at least 3 characters to search.");
-      return;
+      const handler = setTimeout(() => {
+        setDebouncedLocation("");
+      }, 400);
+      return () => clearTimeout(handler);
     }
+
     setLocationError(null);
-    const handler = setTimeout(() => setDebouncedLocation(trimmed), 500);
+    const handler = setTimeout(() => {
+      setDebouncedLocation(trimmed);
+    }, 400);
+
     return () => clearTimeout(handler);
   }, [locationInput]);
 
-  // Fetch items from backend — deduplicated, with AbortController
   useEffect(() => {
-    // Build a stable key to detect truly new queries vs. re-renders
-    const queryKey = JSON.stringify({
-      initialFilter,
-      search: debouncedSearch,
-      category: selectedCategory,
-      location: debouncedLocation,
-      dateFrom: dateFromQuery,
-      dateTo,
-    });
-
-    // Skip if the query hasn't changed
-    if (queryKey === prevQueryKeyRef.current) return;
-    prevQueryKeyRef.current = queryKey;
-
-    // Cancel any in-flight request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
     const fetchItems = async () => {
       setLoadingItems(true);
       setFetchError(null);
 
       try {
-        // Pass category to backend; for "Others" we always send "Others" so the backend
-        // returns the full set of other-category items, then we sub-filter client-side.
         const items = await getBrowseItems(initialFilter, {
           search: debouncedSearch || undefined,
           category: selectedCategory || undefined,
@@ -1417,33 +1385,21 @@ function CombinedItemsPage({ initialFilter = "all" }: { initialFilter?: "all" | 
           dateTo: dateTo || undefined,
         });
 
-        if (!controller.signal.aborted) {
-          setBackendItems(items);
-        }
+        setBackendItems(items);
       } catch (error: unknown) {
-        if (!controller.signal.aborted) {
-          setFetchError(error instanceof Error ? error.message : "Unable to load items from the database.");
-        }
+        setFetchError(error instanceof Error ? error.message : "Unable to load items from the database.");
       } finally {
-        if (!controller.signal.aborted) {
-          setLoadingItems(false);
-        }
+        setLoadingItems(false);
       }
     };
 
     fetchItems();
-
-    return () => {
-      controller.abort();
-    };
   }, [initialFilter, debouncedSearch, selectedCategory, debouncedLocation, dateFromQuery, dateTo]);
 
-  // Client-side filtering: countdown status + Others keyword + intelligent search synonym matching
   const filteredItems = useMemo(() => {
     const filtered = backendItems.filter((item) => {
       // Countdown status filter
-      const matchesCountdown = !countdownFilter ||
-        getDaysInfo(item.reportedAt || item.date).countdownStatus === countdownFilter;
+      const matchesCountdown = !countdownFilter || getDaysInfo(item.reportedAt || item.date).countdownStatus === countdownFilter;
       if (!matchesCountdown) return false;
 
       // Category filter
@@ -1457,15 +1413,7 @@ function CombinedItemsPage({ initialFilter = "all" }: { initialFilter?: "all" | 
         }
       }
 
-      // "Others" category keyword sub-filter (searches against the displayed category/customCategory text)
-      if (selectedCategory === "Others" && othersKeyword.trim().length >= 1) {
-        const kw = othersKeyword.trim().toLowerCase();
-        const catText = item.category.toLowerCase();
-        if (!catText.includes(kw)) return false;
-      }
-
-      // Client-side intelligent search (synonym + partial + keyword matching)
-      // This supplements the backend search with richer matching.
+      // Client-side intelligent search synonyms & keywords
       if (debouncedSearch) {
         if (!matchesSearch(item, debouncedSearch)) return false;
       }
@@ -1477,7 +1425,7 @@ function CombinedItemsPage({ initialFilter = "all" }: { initialFilter?: "all" | 
     return filtered.sort((a, b) => {
       return parseDateForSorting(b) - parseDateForSorting(a);
     });
-  }, [backendItems, countdownFilter, selectedCategory, othersKeyword, debouncedSearch]);
+  }, [backendItems, countdownFilter, selectedCategory, debouncedSearch]);
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredItems.length / BROWSE_PAGE_SIZE)), [filteredItems.length]);
   const safePage = Math.min(currentPage, totalPages);
@@ -1495,49 +1443,6 @@ function CombinedItemsPage({ initialFilter = "all" }: { initialFilter?: "all" | 
   const pageDescription = initialFilter === "lost"
     ? "Browse all lost items reported across campus."
     : "Browse all found items available for collection across campus.";
-
-  /** Validate and apply a date filter value.
-   *  Accepts: current date or any date within the past 30 days.
-   *  Rejects: future dates, dates older than 30 days, invalid formats.
-   */
-  const handleDateChange = (val: string) => {
-    setDateFromInput(val);
-
-    if (!val) {
-      setDateError(null);
-      setDateFromQuery("");
-      setCurrentPage(1);
-      return;
-    }
-
-    // Must be exactly YYYY-MM-DD and parseable
-    if (val.length !== 10 || isNaN(new Date(val).getTime())) {
-      setDateError("Please select a date within the last 30 days.");
-      setDateFromQuery("");
-      return;
-    }
-
-    const today = getTodayDateString();
-    const thirtyDaysAgo = get30DaysAgoDateString();
-
-    if (val > today) {
-      setDateError("Please select a date within the last 30 days.");
-      setDateFromInput("");
-      setDateFromQuery("");
-      return;
-    }
-
-    if (val < thirtyDaysAgo) {
-      setDateError("Please select a date within the last 30 days.");
-      setDateFromInput("");
-      setDateFromQuery("");
-      return;
-    }
-
-    setDateError(null);
-    setDateFromQuery(val);
-    setCurrentPage(1);
-  };
 
   return (
     <div className="space-y-6">
@@ -1564,7 +1469,7 @@ function CombinedItemsPage({ initialFilter = "all" }: { initialFilter?: "all" | 
       {/* ── Search & Filter Bar ─────────────────────────────── */}
       <div className="bg-white border border-[#E5E7EB] rounded-2xl shadow-sm p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* Item Name Search */}
+          {/* Search */}
           <div className="relative md:col-span-1">
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -1581,8 +1486,7 @@ function CombinedItemsPage({ initialFilter = "all" }: { initialFilter?: "all" | 
               </p>
             )}
           </div>
-
-          {/* Location Search */}
+          {/* Location */}
           <div className="relative">
             <MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -1599,8 +1503,7 @@ function CombinedItemsPage({ initialFilter = "all" }: { initialFilter?: "all" | 
               </p>
             )}
           </div>
-
-          {/* Category Filter */}
+          {/* Category */}
           <div className="relative">
             <select
               value={selectedCategory}
@@ -1620,23 +1523,7 @@ function CombinedItemsPage({ initialFilter = "all" }: { initialFilter?: "all" | 
               className={`absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 transition-transform duration-200 ${isCategoryFocused ? "rotate-180 text-[#0891B2]" : ""}`}
             />
           </div>
-
-          {/* "Others" keyword search — shown only when Others is selected */}
-          {selectedCategory === "Others" && (
-            <div className="relative md:col-span-1">
-              <Tag size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search within Others (e.g. umbrella, helmet…)"
-                value={othersKeyword}
-                onChange={e => { setOthersKeyword(e.target.value); setCurrentPage(1); }}
-                className="w-full pl-10 pr-4 py-2.5 bg-[#FFF7ED] border border-[#FED7AA] rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/15 transition-all"
-                style={{ fontFamily: "DM Sans, sans-serif" }}
-              />
-            </div>
-          )}
-
-          {/* Claim Status Filter */}
+          {/* Claim status */}
           <div className="relative">
             <select
               value={countdownFilter}
@@ -1656,56 +1543,49 @@ function CombinedItemsPage({ initialFilter = "all" }: { initialFilter?: "all" | 
               className={`absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 transition-transform duration-200 ${isStatusFocused ? "rotate-180 text-[#0891B2]" : ""}`}
             />
           </div>
-
-          {/* Date Filter — restricted to current date and past 30 days only */}
+          {/* Date From */}
           <div className="relative">
             <Calendar size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             <input
               type="date"
               value={dateFromInput}
-              min={get30DaysAgoDateString()}
               max={getTodayDateString()}
-              onChange={e => handleDateChange(e.target.value)}
-              onBlur={e => {
+              onChange={e => {
                 const val = e.target.value;
-                if (!val) return;
-                const today = getTodayDateString();
-                const thirtyDaysAgo = get30DaysAgoDateString();
-                if (val > today || val < thirtyDaysAgo || isNaN(new Date(val).getTime())) {
-                  handleDateChange("");
+                setDateFromInput(val);
+                if (!val) {
+                  setDateFromQuery("");
+                  setCurrentPage(1);
+                } else if (val.length === 10 && !isNaN(new Date(val).getTime())) {
+                  if (val > getTodayDateString()) {
+                    toast.error("Invalid Date", {
+                      description: "Future dates are not allowed.",
+                      duration: 3500,
+                    });
+                    return;
+                  }
+                  setDateFromQuery(val);
+                  setCurrentPage(1);
                 }
               }}
-              className={`w-full pl-10 pr-4 py-2.5 bg-[#F5F7FA] border rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 transition-all ${dateError
-                ? "border-red-400 focus:border-red-400 focus:ring-red-400/15"
-                : "border-[#E5E7EB] focus:border-[#0891B2] focus:ring-[#0891B2]/15"
-                }`}
+              className="w-full pl-10 pr-4 py-2.5 bg-[#F5F7FA] border border-[#E5E7EB] rounded-xl text-sm text-gray-700 focus:outline-none focus:border-[#0891B2] focus:ring-2 focus:ring-[#0891B2]/15 transition-all"
               style={{ fontFamily: "DM Sans, sans-serif" }}
             />
-            {dateError && (
-              <p className="absolute left-0 top-full mt-1 text-xs text-red-500 z-10" style={{ fontFamily: "DM Sans, sans-serif" }}>
-                {dateError}
-              </p>
-            )}
           </div>
         </div>
-
         <div className="mt-3 flex items-center justify-between">
           <p className="text-xs text-gray-400" style={{ fontFamily: "DM Sans, sans-serif" }}>
             <span className="font-semibold text-gray-600">{filteredItems.length}</span> item{filteredItems.length !== 1 ? "s" : ""} found
           </p>
-          {(searchInput || selectedCategory || countdownFilter || locationInput || dateFromQuery || dateTo || othersKeyword) && (
+          {(searchInput || selectedCategory || countdownFilter || locationInput || dateFromQuery || dateTo) && (
             <button
               onClick={() => {
                 setSearchInput("");
-                setDebouncedSearch("");
                 setSelectedCategory("");
-                setOthersKeyword("");
                 setCountdownFilter("");
                 setLocationInput("");
-                setDebouncedLocation("");
                 setDateFromInput("");
                 setDateFromQuery("");
-                setDateError(null);
                 setDateTo("");
                 setCurrentPage(1);
               }}
@@ -1905,7 +1785,7 @@ function LogoutModal({ onConfirm, onClose, loading }: { onConfirm: () => void; o
           className="text-gray-500 text-sm leading-relaxed mb-7"
           style={{ fontFamily: "DM Sans, sans-serif" }}
         >
-          Are you sure you want to logout from <span className="font-semibold text-gray-700">KJU Lost and Found</span>?
+          Are you sure you want to logout from <span className="font-semibold text-gray-700">Campus Lost and Found</span>?
         </p>
 
         {/* Buttons */}
@@ -2322,7 +2202,6 @@ function ItemHistoryPage({
   const [localDisposedHistory, setLocalDisposedHistory] = useState<DisposedRecord[]>([]);
   const [localReturnedHistory, setLocalReturnedHistory] = useState<ReturnedHistoryRecord[]>([]);
   const [isApiLoading, setIsApiLoading] = useState(false);
-  const isInitialMount = useRef(true);
 
   // Local derived state for not returned lost items matching the current academic year:
   const localNotReturnedLostRecords = useMemo(() => {
@@ -3634,7 +3513,7 @@ function ExpiredItemsPage({
                           setReclaimEmail(val);
                           setReclaimFieldErrors(prev => ({ ...prev, email: validateReturnEmail(val, reclaimRollNo) || "" }));
                         }}
-                        placeholder="rollno@kristujayanti.com"
+                        placeholder="rollno@campus.edu"
                         className={fInput}
                         style={{ fontFamily: "DM Sans, sans-serif", ...(reclaimFieldErrors.email ? { borderColor: "#ef4444", boxShadow: "0 0 0 2px #fee2e2" } : {}) }}
                       />
@@ -3808,11 +3687,9 @@ function AdminSidebar({ active, setActive, onLogoutRequest, isOpen, onClose, isL
     <aside className={`fixed inset-y-0 left-0 z-50 w-52 bg-white flex flex-col min-h-screen shrink-0 border-r border-gray-200 transition-transform duration-300 transform ${isOpen ? "translate-x-0" : "-translate-x-full"} md:relative md:translate-x-0`}>
       <div className="px-4 py-5 border-b border-gray-200">
         <div className="flex items-center gap-2.5">
-          <img
-            src={campusLogo}
-            alt="Campus Logo"
-            className="w-8 h-8 object-contain"
-          />
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-teal-500 flex items-center justify-center text-white shadow-sm shrink-0">
+            <Package size={18} />
+          </div>
           <div>
             <p className="text-gray-900 font-semibold text-sm leading-tight" style={{ fontFamily: "Outfit, sans-serif" }}>Campus</p>
             <p className="text-cyan-600 text-[10px] leading-tight">Lost &amp; Found</p>
@@ -4022,6 +3899,83 @@ function AdminTablePagination({
   );
 }
 
+// ─── Synonym map for intelligent Lost Items search ─────────────────────
+const LOST_ITEM_SYNONYMS: Record<string, string[]> = {
+  bag: ["backpack", "sack", "pouch", "tote", "knapsack", "haversack", "bagpack", "school bag", "travel bag", "handbag", "satchel", "kit bag", "gym bag", "skybag", "laptop bag", "duffle", "duffel", "leather bag"],
+  backpack: ["bag", "school bag", "travel bag", "knapsack", "haversack", "bagpack", "rucksack", "skybag", "campus bag"],
+  phone: ["mobile", "cell", "smartphone", "handphone", "iphone", "android", "cellphone", "handset"],
+  mobile: ["phone", "cell", "smartphone", "handphone", "iphone", "android", "cellphone"],
+  wallet: ["purse", "billfold", "card holder", "money clip"],
+  bottle: ["water bottle", "flask", "tumbler", "sipper", "thermos", "canteen"],
+  "water bottle": ["bottle", "flask", "tumbler", "sipper"],
+  glasses: ["spectacles", "specs", "eyeglasses", "sunglasses", "shades", "goggles", "reading glasses", "frames"],
+  spectacles: ["glasses", "specs", "eyeglasses", "frames"],
+  keys: ["key", "keychain", "key ring", "keyring", "locket", "lanyard key"],
+  key: ["keys", "keychain", "key ring", "keyring"],
+  charger: ["adapter", "cable", "power adapter", "charging cable", "plug"],
+  earphones: ["earbuds", "headphones", "headset", "airpods", "earpiece", "in-ear", "buds"],
+  headphones: ["earphones", "earbuds", "headset", "over-ear"],
+  umbrella: ["raincoat", "rain cover"],
+  book: ["notebook", "textbook", "notes", "journal", "diary", "workbook"],
+  notebook: ["book", "notes", "journal", "copy", "notepad"],
+  pen: ["pencil", "marker", "ballpoint", "ink pen", "sketch pen", "highlighter"],
+  pencil: ["pen", "eraser", "sketch"],
+  calculator: ["calc", "scientific calculator"],
+  laptop: ["computer", "pc", "macbook", "notebook computer", "chromebook"],
+  watch: ["wristwatch", "timepiece", "clock", "smartwatch"],
+  id: ["id card", "identity card", "student id", "college id", "college card", "access card", "pass"],
+  "id card": ["identity card", "student id", "college card", "access card", "id"],
+  earring: ["earrings", "stud", "hoop", "jewelry"],
+  necklace: ["chain", "pendant", "locket", "jewelry"],
+  ring: ["band", "finger ring", "jewelry"],
+  bracelet: ["bangle", "wristband", "jewelry"],
+};
+
+/** Expand a single query word into all synonym terms (including itself). */
+function getLostSynonymTerms(word: string): string[] {
+  const lower = word.toLowerCase();
+  const synonyms = LOST_ITEM_SYNONYMS[lower] || [];
+  const reverseMatches = Object.entries(LOST_ITEM_SYNONYMS)
+    .filter(([, syns]) => syns.some(s => s.toLowerCase() === lower))
+    .map(([key]) => key);
+  return [lower, ...synonyms.map(s => s.toLowerCase()), ...reverseMatches];
+}
+
+/**
+ * Intelligent multi-strategy matcher for Lost Items.
+ * Checks item name + reporter name against: exact, partial, keyword, synonym.
+ */
+function matchesLostSearch(item: AdminLostItem, query: string): boolean {
+  if (!query) return true;
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+
+  const nameHaystack = item.name.toLowerCase();
+  const reporterHaystack = item.reporterName.toLowerCase();
+  const combined = `${nameHaystack} ${reporterHaystack}`;
+
+  // 1. Partial / substring match on name or reporter
+  if (nameHaystack.includes(q) || reporterHaystack.includes(q)) return true;
+
+  // 2. Keyword match: all words in query appear in the combined haystack
+  const queryWords = q.split(/\s+/).filter(Boolean);
+  if (queryWords.length > 1 && queryWords.every(w => combined.includes(w))) return true;
+
+  // 3. Synonym match: expand each word and check against item name
+  for (const word of queryWords) {
+    const terms = getLostSynonymTerms(word);
+    if (terms.some(term => nameHaystack.includes(term))) return true;
+  }
+
+  return false;
+}
+
+/** Case-insensitive partial location match. */
+function matchesLostLocation(item: AdminLostItem, query: string): boolean {
+  if (!query) return true;
+  return item.location.toLowerCase().includes(query.trim().toLowerCase());
+}
+
 function LostItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { items: AdminLostItem[]; setItems: React.Dispatch<React.SetStateAction<AdminLostItem[]>>; onReturn: (r: ReturnedLostRecord) => void; isLoading?: boolean; onRefresh?: () => void }) {
   const [editItem, setEditItem] = useState<AdminLostItem | null>(null);
   const [editStatus, setEditStatus] = useState("");
@@ -4036,34 +3990,97 @@ function LostItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { it
 
   const showSkeleton = isLoading || isRefreshing;
 
+  // Raw input state (bound to inputs)
   const [searchTerm, setSearchTerm] = useState("");
   const [filterLocation, setFilterLocation] = useState("");
   const [filterCountdown, setFilterCountdown] = useState("");
 
+  // Debounced effective values — only updated when input ≥3 chars or empty
+  const [activeSearch, setActiveSearch] = useState("");
+  const [activeLocation, setActiveLocation] = useState("");
+  const [searchHint, setSearchHint] = useState<string | null>(null);
+  const [locationHint, setLocationHint] = useState<string | null>(null);
+
+  // Track previous debounced values to prevent duplicate re-renders
+  const prevSearchRef = useRef("");
+  const prevLocationRef = useRef("");
+
+  // Debounce search input — only activate at ≥3 chars
+  useEffect(() => {
+    const trimmed = searchTerm.trim();
+    if (trimmed.length === 0) {
+      setSearchHint(null);
+      const t = setTimeout(() => {
+        if (prevSearchRef.current !== "") { prevSearchRef.current = ""; setActiveSearch(""); }
+      }, 400);
+      return () => clearTimeout(t);
+    }
+    if (trimmed.length < 3) {
+      setSearchHint("Enter at least 3 characters to search.");
+      return; // Don't update activeSearch — avoids stale/partial-query results
+    }
+    setSearchHint(null);
+    const t = setTimeout(() => {
+      if (prevSearchRef.current !== trimmed) { prevSearchRef.current = trimmed; setActiveSearch(trimmed); }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
+  // Debounce location input — only activate at ≥3 chars
+  useEffect(() => {
+    const trimmed = filterLocation.trim();
+    if (trimmed.length === 0) {
+      setLocationHint(null);
+      const t = setTimeout(() => {
+        if (prevLocationRef.current !== "") { prevLocationRef.current = ""; setActiveLocation(""); }
+      }, 400);
+      return () => clearTimeout(t);
+    }
+    if (trimmed.length < 3) {
+      setLocationHint("Enter at least 3 characters to filter.");
+      return;
+    }
+    setLocationHint(null);
+    const t = setTimeout(() => {
+      if (prevLocationRef.current !== trimmed) { prevLocationRef.current = trimmed; setActiveLocation(trimmed); }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [filterLocation]);
+
   const statusColor = (s: string) =>
     s === "Returned" ? "text-emerald-600 bg-emerald-100" : "text-amber-600 bg-amber-100";
 
-  const filteredItems = items
-    .filter(item => {
-      if (item.status === "Returned") return false;
-      if (item.status === "Not Returned" && getDaysInfo(item.reportedAt).isExpired) return false;
-      const q = searchTerm.toLowerCase();
-      const matchesSearch = !q ||
-        item.name.toLowerCase().includes(q) ||
-        item.location.toLowerCase().includes(q) ||
-        item.reporterName.toLowerCase().includes(q) ||
-        item.reportedAt.toLowerCase().includes(q);
-      const matchesLocation = !filterLocation || item.location.toLowerCase().includes(filterLocation.toLowerCase());
-      const matchesCountdown = !filterCountdown || getDaysInfo(item.reportedAt).countdownStatus === filterCountdown;
-      return matchesSearch && matchesLocation && matchesCountdown;
-    })
-    .sort((a, b) => parseDateTime(b.reportedAt) - parseDateTime(a.reportedAt));
+  // Statistics: always computed from the FULL dataset — unaffected by search/filter state
+  const statsItems = useMemo(() =>
+    items.filter(item => item.status !== "Returned"),
+    [items]
+  );
+
+  // Filtered + sorted items for the table (newest first)
+  const filteredItems = useMemo(() =>
+    items
+      .filter(item => {
+        if (item.status === "Returned") return false;
+        if (item.status === "Not Returned" && getDaysInfo(item.reportedAt).isExpired) return false;
+        if (!matchesLostSearch(item, activeSearch)) return false;
+        if (!matchesLostLocation(item, activeLocation)) return false;
+        const matchesCountdown = !filterCountdown || getDaysInfo(item.reportedAt).countdownStatus === filterCountdown;
+        return matchesCountdown;
+      })
+      .sort((a, b) => parseDateTime(b.reportedAt) - parseDateTime(a.reportedAt)),
+    [items, activeSearch, activeLocation, filterCountdown]
+  );
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
   const pageItems = filteredItems.slice((safePage - 1) * rowsPerPage, safePage * rowsPerPage);
 
-  const clearFilters = () => { setSearchTerm(""); setFilterLocation(""); setCurrentPage(1); };
+  const clearFilters = () => {
+    setSearchTerm(""); setActiveSearch(""); prevSearchRef.current = "";
+    setFilterLocation(""); setActiveLocation(""); prevLocationRef.current = "";
+    setSearchHint(null); setLocationHint(null);
+    setCurrentPage(1);
+  };
 
   const handleEdit = (item: AdminLostItem) => {
     if (item.status === "Returned") return;
@@ -4121,12 +4138,6 @@ function LostItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { it
     }
   };
 
-  // Statistics: always computed from the FULL dataset — unaffected by search/filter state
-  const statsItems = useMemo(() =>
-    items.filter(item => item.status !== "Returned"),
-    [items]
-  );
-
   return (
     <main className="flex-1 overflow-y-auto px-5 py-4 bg-gray-50">
       <div className="mb-4">
@@ -4134,7 +4145,7 @@ function LostItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { it
         <p className="text-gray-600 text-sm" style={{ fontFamily: "DM Sans, sans-serif" }}>Manage all lost items reported on campus</p>
       </div>
 
-      {/* Countdown Summary Cards */}
+      {/* Countdown Summary Cards — always use full dataset, unaffected by search/filter */}
       <CountdownSummaryCards items={statsItems as Array<Record<string, string>>} dateField="reportedAt" isLoading={showSkeleton} />
 
       {/* Search and Filters */}
@@ -4150,6 +4161,9 @@ function LostItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { it
               className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
               style={{ fontFamily: "DM Sans, sans-serif" }}
             />
+            {searchHint && (
+              <p className="absolute left-0 top-full mt-1 text-xs text-amber-500 z-10" style={{ fontFamily: "DM Sans, sans-serif" }}>{searchHint}</p>
+            )}
           </div>
           <div className="relative">
             <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -4161,6 +4175,9 @@ function LostItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { it
               className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
               style={{ fontFamily: "DM Sans, sans-serif" }}
             />
+            {locationHint && (
+              <p className="absolute left-0 top-full mt-1 text-xs text-amber-500 z-10" style={{ fontFamily: "DM Sans, sans-serif" }}>{locationHint}</p>
+            )}
           </div>
         </div>
         {/* Countdown filter row */}
@@ -4329,6 +4346,83 @@ function formatNow(): string {
   return `${day} ${mon} ${year}, ${String(h).padStart(2, "0")}:${m} ${ampm}`;
 }
 
+// ─── Synonym map for intelligent Found Items search ───────────────────
+const FOUND_ITEM_SYNONYMS: Record<string, string[]> = {
+  bag: ["backpack", "sack", "pouch", "tote", "knapsack", "haversack", "bagpack", "school bag", "travel bag", "handbag", "satchel", "kit bag", "gym bag", "skybag", "laptop bag", "duffle", "duffel", "leather bag"],
+  backpack: ["bag", "school bag", "travel bag", "knapsack", "haversack", "bagpack", "rucksack", "skybag", "campus bag"],
+  phone: ["mobile", "cell", "smartphone", "handphone", "iphone", "android", "cellphone", "handset"],
+  mobile: ["phone", "cell", "smartphone", "handphone", "iphone", "android", "cellphone"],
+  wallet: ["purse", "billfold", "card holder", "money clip"],
+  bottle: ["water bottle", "flask", "tumbler", "sipper", "thermos", "canteen"],
+  "water bottle": ["bottle", "flask", "tumbler", "sipper"],
+  glasses: ["spectacles", "specs", "eyeglasses", "sunglasses", "shades", "goggles", "reading glasses", "frames"],
+  spectacles: ["glasses", "specs", "eyeglasses", "frames"],
+  keys: ["key", "keychain", "key ring", "keyring", "locket", "lanyard key"],
+  key: ["keys", "keychain", "key ring", "keyring"],
+  charger: ["adapter", "cable", "power adapter", "charging cable", "plug"],
+  earphones: ["earbuds", "headphones", "headset", "airpods", "earpiece", "in-ear", "buds"],
+  headphones: ["earphones", "earbuds", "headset", "over-ear"],
+  umbrella: ["raincoat", "rain cover"],
+  book: ["notebook", "textbook", "notes", "journal", "diary", "workbook"],
+  notebook: ["book", "notes", "journal", "copy", "notepad"],
+  pen: ["pencil", "marker", "ballpoint", "ink pen", "sketch pen", "highlighter"],
+  pencil: ["pen", "eraser", "sketch"],
+  calculator: ["calc", "scientific calculator"],
+  laptop: ["computer", "pc", "macbook", "notebook computer", "chromebook"],
+  watch: ["wristwatch", "timepiece", "clock", "smartwatch"],
+  id: ["id card", "identity card", "student id", "college id", "college card", "access card", "pass"],
+  "id card": ["identity card", "student id", "college card", "access card", "id"],
+  earring: ["earrings", "stud", "hoop", "jewelry"],
+  necklace: ["chain", "pendant", "locket", "jewelry"],
+  ring: ["band", "finger ring", "jewelry"],
+  bracelet: ["bangle", "wristband", "jewelry"],
+};
+
+/** Expand a single query word into all synonym terms (including itself). */
+function getFoundSynonymTerms(word: string): string[] {
+  const lower = word.toLowerCase();
+  const synonyms = FOUND_ITEM_SYNONYMS[lower] || [];
+  const reverseMatches = Object.entries(FOUND_ITEM_SYNONYMS)
+    .filter(([, syns]) => syns.some(s => s.toLowerCase() === lower))
+    .map(([key]) => key);
+  return [lower, ...synonyms.map(s => s.toLowerCase()), ...reverseMatches];
+}
+
+/**
+ * Intelligent multi-strategy matcher for Found Items.
+ * Checks item name + date against: partial, keyword, synonym.
+ */
+function matchesFoundSearch(item: AdminFoundItem, query: string): boolean {
+  if (!query) return true;
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+
+  const nameHaystack = item.name.toLowerCase();
+  const dateHaystack = item.dateFound.toLowerCase();
+  const combined = `${nameHaystack} ${dateHaystack}`;
+
+  // 1. Partial / substring match on name or date
+  if (nameHaystack.includes(q) || dateHaystack.includes(q)) return true;
+
+  // 2. Keyword match: all words in query appear in the combined haystack
+  const queryWords = q.split(/\s+/).filter(Boolean);
+  if (queryWords.length > 1 && queryWords.every(w => combined.includes(w))) return true;
+
+  // 3. Synonym match: expand each word and check against item name
+  for (const word of queryWords) {
+    const terms = getFoundSynonymTerms(word);
+    if (terms.some(term => nameHaystack.includes(term))) return true;
+  }
+
+  return false;
+}
+
+/** Case-insensitive partial location match. */
+function matchesFoundLocation(item: AdminFoundItem, query: string): boolean {
+  if (!query) return true;
+  return item.location.toLowerCase().includes(query.trim().toLowerCase());
+}
+
 function FoundItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { items: AdminFoundItem[]; setItems: React.Dispatch<React.SetStateAction<AdminFoundItem[]>>; onReturn: (r: ReturnedLostRecord) => void; isLoading?: boolean; onRefresh?: () => void }) {
   const [editItem, setEditItem] = useState<AdminFoundItem | null>(null);
   const [pendingReturnItem, setPendingReturnItem] = useState<AdminFoundItem | null>(null);
@@ -4351,23 +4445,82 @@ function FoundItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { i
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSaveLoading, setIsSaveLoading] = useState(false);
 
+  // Raw input state (bound to inputs)
   const [searchTerm, setSearchTerm] = useState("");
   const [filterLocation, setFilterLocation] = useState("");
   const [filterCountdown, setFilterCountdown] = useState("");
 
-  const filteredItems = items
-    .filter(item => {
-      if (item.status === "Returned") return false;
-      const q = searchTerm.toLowerCase();
-      const matchesSearch = !q ||
-        item.name.toLowerCase().includes(q) ||
-        item.location.toLowerCase().includes(q) ||
-        item.foundAt.toLowerCase().includes(q);
-      const matchesLocation = !filterLocation || item.location.toLowerCase().includes(filterLocation.toLowerCase());
-      const matchesCountdown = !filterCountdown || getDaysInfo(item.foundAt).countdownStatus === filterCountdown;
-      return matchesSearch && matchesLocation && matchesCountdown;
-    })
-    .sort((a, b) => parseDateTime(b.foundAt) - parseDateTime(a.foundAt));
+  // Debounced effective values — only updated when input ≥3 chars or empty
+  const [activeSearch, setActiveSearch] = useState("");
+  const [activeLocation, setActiveLocation] = useState("");
+  const [searchHint, setSearchHint] = useState<string | null>(null);
+  const [locationHint, setLocationHint] = useState<string | null>(null);
+
+  // Track previous debounced values to prevent duplicate re-renders
+  const prevSearchRef = useRef("");
+  const prevLocationRef = useRef("");
+
+  // Debounce search input — only activate at ≥3 chars
+  useEffect(() => {
+    const trimmed = searchTerm.trim();
+    if (trimmed.length === 0) {
+      setSearchHint(null);
+      const t = setTimeout(() => {
+        if (prevSearchRef.current !== "") { prevSearchRef.current = ""; setActiveSearch(""); }
+      }, 400);
+      return () => clearTimeout(t);
+    }
+    if (trimmed.length < 3) {
+      setSearchHint("Enter at least 3 characters to search.");
+      return;
+    }
+    setSearchHint(null);
+    const t = setTimeout(() => {
+      if (prevSearchRef.current !== trimmed) { prevSearchRef.current = trimmed; setActiveSearch(trimmed); }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
+  // Debounce location input — only activate at ≥3 chars
+  useEffect(() => {
+    const trimmed = filterLocation.trim();
+    if (trimmed.length === 0) {
+      setLocationHint(null);
+      const t = setTimeout(() => {
+        if (prevLocationRef.current !== "") { prevLocationRef.current = ""; setActiveLocation(""); }
+      }, 400);
+      return () => clearTimeout(t);
+    }
+    if (trimmed.length < 3) {
+      setLocationHint("Enter at least 3 characters to filter.");
+      return;
+    }
+    setLocationHint(null);
+    const t = setTimeout(() => {
+      if (prevLocationRef.current !== trimmed) { prevLocationRef.current = trimmed; setActiveLocation(trimmed); }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [filterLocation]);
+
+  // Statistics: always computed from the FULL dataset — unaffected by search/filter state
+  const statsItems = useMemo(() =>
+    items.filter(item => item.status !== "Returned"),
+    [items]
+  );
+
+  // Filtered + sorted items for the table (newest first by foundAt)
+  const filteredItems = useMemo(() =>
+    items
+      .filter(item => {
+        if (item.status === "Returned") return false;
+        if (!matchesFoundSearch(item, activeSearch)) return false;
+        if (!matchesFoundLocation(item, activeLocation)) return false;
+        const matchesCountdown = !filterCountdown || getDaysInfo(item.foundAt).countdownStatus === filterCountdown;
+        return matchesCountdown;
+      })
+      .sort((a, b) => parseDateTime(b.foundAt) - parseDateTime(a.foundAt)),
+    [items, activeSearch, activeLocation, filterCountdown]
+  );
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / rowsPerPage));
   const safePage = Math.min(currentPage, totalPages);
@@ -4504,8 +4657,8 @@ function FoundItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { i
         <p className="text-gray-600 text-sm" style={{ fontFamily: "DM Sans, sans-serif" }}>Manage all found items on campus</p>
       </div>
 
-      {/* Countdown Summary Cards */}
-      <CountdownSummaryCards items={items as Array<Record<string, string>>} dateField="foundAt" />
+      {/* Countdown Summary Cards — always use full dataset, unaffected by search/filter */}
+      <CountdownSummaryCards items={statsItems as Array<Record<string, string>>} dateField="foundAt" />
 
       {/* Search and Filters */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
@@ -4520,6 +4673,9 @@ function FoundItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { i
               className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
               style={{ fontFamily: "DM Sans, sans-serif" }}
             />
+            {searchHint && (
+              <p className="absolute left-0 top-full mt-1 text-xs text-amber-500 z-10" style={{ fontFamily: "DM Sans, sans-serif" }}>{searchHint}</p>
+            )}
           </div>
           <div className="relative">
             <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -4531,6 +4687,9 @@ function FoundItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { i
               className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
               style={{ fontFamily: "DM Sans, sans-serif" }}
             />
+            {locationHint && (
+              <p className="absolute left-0 top-full mt-1 text-xs text-amber-500 z-10" style={{ fontFamily: "DM Sans, sans-serif" }}>{locationHint}</p>
+            )}
           </div>
         </div>
         {/* Countdown filter row */}
@@ -4809,7 +4968,7 @@ function FoundItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { i
                             setEditEmail(val);
                             setFieldErrors(prev => ({ ...prev, email: validateReturnEmail(val, editRollNo) || "" }));
                           }}
-                          placeholder="rollno@kristujayanti.com"
+                          placeholder="rollno@campus.edu"
                           className={fInput}
                           style={{ fontFamily: "DM Sans, sans-serif", ...(fieldErrors.email ? { borderColor: "#ef4444", boxShadow: "0 0 0 2px #fee2e2" } : {}) }}
                         />
@@ -5306,11 +5465,9 @@ function AdminView({ onLogout }: { onLogout: () => void }) {
               <Menu size={20} />
             </button>
             <div className="flex items-center gap-1.5">
-              <img
-                src={campusLogo}
-                alt="Campus Logo"
-                className="w-6 h-6 object-contain"
-              />
+              <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-cyan-600 to-teal-500 flex items-center justify-center text-white shadow-sm shrink-0">
+                <Package size={14} />
+              </div>
               <span className="text-gray-900 font-semibold text-xs leading-tight" style={{ fontFamily: "Outfit, sans-serif" }}>Campus L&F</span>
             </div>
           </div>

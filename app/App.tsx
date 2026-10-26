@@ -12,7 +12,6 @@ import {
 import { CardNameTooltip } from "./components/CardNameTooltip";
 import ClaimCountdownBar from "./components/ClaimCountdownBar";
 import { ScrollToTopButton } from "./components/ScrollToTopButton";
-import campusLogo from "../imports/afa90946107debb396ffdb7284683a17-1.jpg";
 import { getAdminFoundItems, getAdminLostItems, getBrowseItems, getHistory, reportItem, updateLostItemStatus, updateFoundItemStatus, deleteLostItem, markItemDisposed } from "./api";
 import {
   categories,
@@ -118,13 +117,10 @@ function validateReturnPhone(phone: string): string | null {
 
 function validateReturnEmail(email: string, rollNo: string): string | null {
   const trimmed = email.trim().toLowerCase();
-  if (!trimmed) return "Please enter a college email address.";
-  if (!trimmed.endsWith("@kristujayanti.com") || /\s/.test(trimmed)) {
-    return "Only @kristujayanti.com domain are allowed.";
-  }
-  const username = trimmed.split("@")[0];
-  if (username !== rollNo.trim().toLowerCase()) {
-    return "Email must match the entered Roll Number.";
+  if (!trimmed) return "Please enter an email address.";
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(trimmed)) {
+    return "Please enter a valid email address.";
   }
   return null;
 }
@@ -321,12 +317,9 @@ function UploadPage({ onBack, onItemCreated }: { onBack: () => void; onItemCreat
       case "email":
         if (isStudent) {
           if (!trimmed) return "Email address is required.";
-          if (!trimmed.endsWith("@kristujayanti.com") || trimmed !== trimmed.toLowerCase() || /\s/.test(value)) {
-            return "Only @kristujayanti.com domain are allowed.";
-          }
-          const username = trimmed.substring(0, trimmed.indexOf("@"));
-          if (username !== form.rollNo) {
-            return "Email must match the entered Roll Number.";
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(trimmed)) {
+            return "Please enter a valid email address.";
           }
         }
         return null;
@@ -366,12 +359,9 @@ function UploadPage({ onBack, onItemCreated }: { onBack: () => void; onItemCreat
       case "staffEmail":
         if (!isStudent) {
           if (!trimmed) return "Email address is required.";
-          if (!trimmed.endsWith("@kristujayanti.com") || trimmed !== trimmed.toLowerCase() || /\s/.test(value)) {
-            return "Only @kristujayanti.com domain are allowed.";
-          }
-          const username = trimmed.substring(0, trimmed.indexOf("@"));
-          if (username !== form.employeeId) {
-            return "Email must match the entered Staff ID.";
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(trimmed)) {
+            return "Please enter a valid email address.";
           }
         }
         return null;
@@ -1194,7 +1184,9 @@ function PublicBrowseView({ type, onBack }: { type: "lost" | "found"; onBack: ()
             Back to Home
           </button>
           <div className="flex items-center gap-3">
-            <img src={campusLogo} alt="Campus Logo" className="w-8 h-8 object-contain" />
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-teal-500 flex items-center justify-center text-white shadow-sm shrink-0">
+              <Package size={18} />
+            </div>
             <p className="text-gray-900 font-semibold text-sm" style={{ fontFamily: "Outfit, sans-serif" }}>Campus Lost and Found</p>
           </div>
         </div>
@@ -1793,7 +1785,7 @@ function LogoutModal({ onConfirm, onClose, loading }: { onConfirm: () => void; o
           className="text-gray-500 text-sm leading-relaxed mb-7"
           style={{ fontFamily: "DM Sans, sans-serif" }}
         >
-          Are you sure you want to logout from <span className="font-semibold text-gray-700">KJU Lost and Found</span>?
+          Are you sure you want to logout from <span className="font-semibold text-gray-700">Campus Lost and Found</span>?
         </p>
 
         {/* Buttons */}
@@ -3521,7 +3513,7 @@ function ExpiredItemsPage({
                           setReclaimEmail(val);
                           setReclaimFieldErrors(prev => ({ ...prev, email: validateReturnEmail(val, reclaimRollNo) || "" }));
                         }}
-                        placeholder="rollno@kristujayanti.com"
+                        placeholder="rollno@campus.edu"
                         className={fInput}
                         style={{ fontFamily: "DM Sans, sans-serif", ...(reclaimFieldErrors.email ? { borderColor: "#ef4444", boxShadow: "0 0 0 2px #fee2e2" } : {}) }}
                       />
@@ -3695,11 +3687,9 @@ function AdminSidebar({ active, setActive, onLogoutRequest, isOpen, onClose, isL
     <aside className={`fixed inset-y-0 left-0 z-50 w-52 bg-white flex flex-col min-h-screen shrink-0 border-r border-gray-200 transition-transform duration-300 transform ${isOpen ? "translate-x-0" : "-translate-x-full"} md:relative md:translate-x-0`}>
       <div className="px-4 py-5 border-b border-gray-200">
         <div className="flex items-center gap-2.5">
-          <img
-            src={campusLogo}
-            alt="Campus Logo"
-            className="w-8 h-8 object-contain"
-          />
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-teal-500 flex items-center justify-center text-white shadow-sm shrink-0">
+            <Package size={18} />
+          </div>
           <div>
             <p className="text-gray-900 font-semibold text-sm leading-tight" style={{ fontFamily: "Outfit, sans-serif" }}>Campus</p>
             <p className="text-cyan-600 text-[10px] leading-tight">Lost &amp; Found</p>
@@ -4978,7 +4968,7 @@ function FoundItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { i
                             setEditEmail(val);
                             setFieldErrors(prev => ({ ...prev, email: validateReturnEmail(val, editRollNo) || "" }));
                           }}
-                          placeholder="rollno@kristujayanti.com"
+                          placeholder="rollno@campus.edu"
                           className={fInput}
                           style={{ fontFamily: "DM Sans, sans-serif", ...(fieldErrors.email ? { borderColor: "#ef4444", boxShadow: "0 0 0 2px #fee2e2" } : {}) }}
                         />
@@ -5475,11 +5465,9 @@ function AdminView({ onLogout }: { onLogout: () => void }) {
               <Menu size={20} />
             </button>
             <div className="flex items-center gap-1.5">
-              <img
-                src={campusLogo}
-                alt="Campus Logo"
-                className="w-6 h-6 object-contain"
-              />
+              <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-cyan-600 to-teal-500 flex items-center justify-center text-white shadow-sm shrink-0">
+                <Package size={14} />
+              </div>
               <span className="text-gray-900 font-semibold text-xs leading-tight" style={{ fontFamily: "Outfit, sans-serif" }}>Campus L&F</span>
             </div>
           </div>

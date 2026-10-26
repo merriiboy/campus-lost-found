@@ -88,6 +88,8 @@ async function main() {
   // 2. Start Backend API
   console.log('\x1b[34m[Backend]\x1b[0m Starting Express API on http://localhost:5000 ...');
   const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+
   startService(
     'Backend',
     '\x1b[34m',
@@ -101,8 +103,8 @@ async function main() {
   startService(
     'Frontend',
     '\x1b[35m',
-    npmCmd,
-    ['run', 'dev', '--', '--host', '0.0.0.0', '--port', '5173'],
+    npxCmd,
+    ['vite', '--host', '0.0.0.0', '--port', '5173'],
     __dirname
   );
 

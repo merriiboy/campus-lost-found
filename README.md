@@ -1,11 +1,40 @@
+# Campus Lost & Found System
 
-  # campus lost &found_final
+A complete full-stack web application designed for campus lost and found management.
 
-  This is a code bundle for campus lost &found_final. The original project is available at https://www.figma.com/design/nfT6psmt8JxWU5OI6iZR74/campus-lost--found_final.
+## 🚀 Tech Stack
+- **Frontend**: React 18, Vite, TypeScript, Tailwind CSS, Lucide Icons, Motion
+- **Backend**: Node.js, Express, TypeScript, Mongoose, Joi, JWT, Helmet
+- **Database**: Local MongoDB Community Server (`mongodb://localhost:27017/campus-lost-found`)
 
-  ## Running the code
+---
 
-  Run `npm i` to install the dependencies.
+## 🏃 Running the Application
 
-  Run `npm run dev` to start the development server.
-  
+### 1. Install Dependencies
+```bash
+npm install
+cd backend && npm install && cd ..
+```
+
+### 2. Start Full Stack (Database + Backend + Frontend)
+Run the all-in-one startup script:
+```bash
+npm start
+```
+Or directly:
+```bash
+node run-all.js
+```
+*(On Windows, you can also double-click `start.bat` or press `F5` in VS Code)*
+
+### 3. Access URLs
+- **Frontend Application**: [http://localhost:5173](http://localhost:5173)
+- **Backend REST API**: [http://localhost:5000](http://localhost:5000)
+- **MongoDB Connection**: `mongodb://localhost:27017/campus-lost-found`
+
+---
+
+## 🔐 Admin Credentials
+- **Email**: `admin@campus.edu`
+- **Password**: `admin@12345` (or `admin123`)

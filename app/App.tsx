@@ -3982,12 +3982,44 @@ function matchesLostLocation(item: AdminLostItem, query: string): boolean {
   return item.location.toLowerCase().includes(query.trim().toLowerCase());
 }
 
+function validateLostReturnStudentName(name: string): string | null {
+  const trimmed = name.trim();
+  if (!trimmed) return "Student Name is required.";
+  if (trimmed.length < 2) return "Student Name must contain at least 2 characters.";
+  if (trimmed.length > 100) return "Student Name must not exceed 100 characters.";
+  if (!/^[a-zA-Z\s'-]+$/.test(trimmed)) return "Student Name can only contain letters, spaces, hyphens, and apostrophes.";
+  return null;
+}
+
+function validateLostReturnRollNo(roll: string): string | null {
+  const trimmed = roll.trim();
+  if (!trimmed) return null;
+  if (trimmed.length < 3) return "Roll Number must be at least 3 characters.";
+  if (trimmed.length > 30) return "Roll Number must not exceed 30 characters.";
+  if (!/^[a-zA-Z0-9_-]+$/.test(trimmed)) return "Only alphanumeric characters and hyphens allowed.";
+  return null;
+}
+
+function validateLostReturnRemarks(remarks: string): string | null {
+  if (remarks.length > 500) return "Remarks must not exceed 500 characters.";
+  return null;
+}
+
 function LostItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { items: AdminLostItem[]; setItems: React.Dispatch<React.SetStateAction<AdminLostItem[]>>; onReturn: (r: ReturnedLostRecord) => void; isLoading?: boolean; onRefresh?: () => void }) {
   const [editItem, setEditItem] = useState<AdminLostItem | null>(null);
-  const [editStatus, setEditStatus] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [isModalLoading, setIsModalLoading] = useState(false);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [editStatus, setEditStatus] = useState("Returned");
   const [editStudentName, setEditStudentName] = useState("");
   const [editRollNo, setEditRollNo] = useState("");
-  const [editClaimedDate, setEditClaimedDate] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editReturnedDate, setEditReturnedDate] = useState(getTodayDateString());
+  const [editReturnedTime, setEditReturnedTime] = useState("");
+  const [editRemarks, setEditRemarks] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -4088,30 +4120,67 @@ function LostItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { it
     setCurrentPage(1);
   };
 
-  const handleEdit = (item: AdminLostItem) => {
+  const openModal = (item: AdminLostItem) => {
     if (item.status === "Returned") return;
-    setEditItem(item); setEditStatus("Returned");
-    // Pre-populate with reporter info (the person who lost the item) so validation passes
-    setEditStudentName(item.reporterName || ""); setEditRollNo(item.reporterRoll || ""); setEditClaimedDate(item.claimedDate || "");
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    setEditItem(item);
+    setEditStatus("Returned");
+    setEditStudentName(item.reporterName || item.studentName || "");
+    setEditRollNo(item.reporterRoll || item.rollNo || "");
+    setEditPhone(item.reporterPhone || "");
+    setEditEmail(item.reporterEmail || "");
+    setEditReturnedDate(getTodayDateString());
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, "0");
+    const m = String(now.getMinutes()).padStart(2, "0");
+    setEditReturnedTime(`${h}:${m}`);
+    setEditRemarks("");
+    setFieldErrors({});
+    setIsSaveLoading(false);
+    setIsModalLoading(true);
+    setTimeout(() => {
+      setIsModalLoading(false);
+    }, 250);
+    requestAnimationFrame(() => requestAnimationFrame(() => setModalVisible(true)));
   };
+
+  const closeModal = () => {
+    setModalVisible(false);
+    closeTimerRef.current = setTimeout(() => setEditItem(null), 260);
+  };
+
+  const handleEdit = openModal;
+
+  const isReturnValid = editStatus === "Returned" &&
+    !validateLostReturnStudentName(editStudentName) &&
+    !validateLostReturnRollNo(editRollNo) &&
+    !validateReturnedDate(editReturnedDate, editItem?.dateFound ?? "") &&
+    !validateReturnedTime(editReturnedTime, editReturnedDate) &&
+    !validateLostReturnRemarks(editRemarks);
 
   const handleSaveEdit = async () => {
     if (!editItem || isSaveLoading) return;
-    if (!editStatus || editStatus.trim() === "") {
-      toast.error("Validation Error", { description: "Status field is required.", duration: 4000 });
+    const errors: Record<string, string> = {};
+    const nameErr = validateLostReturnStudentName(editStudentName);
+    if (nameErr) errors.name = nameErr;
+    const rollErr = validateLostReturnRollNo(editRollNo);
+    if (rollErr) errors.roll = rollErr;
+    const dateErr = validateReturnedDate(editReturnedDate, editItem.dateFound);
+    if (dateErr) errors.date = dateErr;
+    const timeErr = validateReturnedTime(editReturnedTime, editReturnedDate);
+    if (timeErr) errors.time = timeErr;
+    const remarksErr = validateLostReturnRemarks(editRemarks);
+    if (remarksErr) errors.remarks = remarksErr;
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
-    if (editStatus !== "Returned") {
-      toast.error("Validation Error", { description: "Status must be Returned.", duration: 4000 });
-      return;
-    }
+
     const trimmedName = editStudentName.trim();
-    const nameErr = validateName(trimmedName, "Student Name");
-    if (nameErr) {
-      toast.error("Validation Error", { description: nameErr, duration: 4000 });
-      return;
-    }
     const trimmedRoll = editRollNo.trim();
+    const trimmedPhone = editPhone.trim();
+    const trimmedEmail = editEmail.trim();
 
     setIsSaveLoading(true);
     try {
@@ -4126,16 +4195,16 @@ function LostItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { it
         studentName: trimmedName,
         rollNo: trimmedRoll,
         location: editItem.location,
-        reporter: editItem.reporterName,
-        reporterPhone: editItem.reporterPhone,
-        reporterEmail: editItem.reporterEmail,
+        reporter: editItem.reporterName || trimmedName,
+        reporterPhone: trimmedPhone || editItem.reporterPhone,
+        reporterEmail: trimmedEmail || editItem.reporterEmail,
       });
       setItems?.(prev => prev.filter(i => i.id !== editItem.id));
-      toast.success("Item marked as Returned", {
-        description: `${editItem.name} has been moved to Returned History.`,
+      toast.success("Lost Item Marked as Returned", {
+        description: `"${editItem.name}" has been returned to ${trimmedName} and moved to Returned History.`,
         duration: 3500,
       });
-      setEditItem(null);
+      closeModal();
       onRefresh?.();
     } catch (error) {
       console.error(error);
@@ -4144,6 +4213,9 @@ function LostItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { it
       setIsSaveLoading(false);
     }
   };
+
+  const fLabel = "block text-xs font-semibold text-gray-600 mb-1.5";
+  const fInput = "w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all";
 
   return (
     <main className="flex-1 overflow-y-auto px-5 py-4 bg-gray-50">
@@ -4277,59 +4349,334 @@ function LostItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { it
         />
       </div>
 
+      {/* ── Edit / Mark Lost Item as Returned Modal ───────────────────────── */}
       {editItem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl border border-gray-200 shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-bold text-gray-900 mb-1" style={{ fontFamily: "Outfit, sans-serif" }}>Edit Item Status</h2>
-            <p className="text-xs text-gray-400 mb-4" style={{ fontFamily: "DM Sans, sans-serif" }}>Changing to "Returned" requires confirmation</p>
-            {isSaveLoading ? (
-              <div className="space-y-4 animate-pulse py-4">
-                <div className="h-10 bg-gray-200 rounded-lg w-full"></div>
-                <div className="h-10 bg-gray-200 rounded-lg w-full"></div>
-                <div className="flex items-center justify-center py-4">
-                  <Loader2 className="animate-spin text-cyan-600" size={24} />
+        <div
+          onClick={closeModal}
+          style={{
+            position: "fixed", inset: 0, zIndex: 50,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "1rem",
+            background: modalVisible ? "rgba(15,23,42,0.52)" : "rgba(15,23,42,0)",
+            backdropFilter: modalVisible ? "blur(4px)" : "blur(0px)",
+            transition: "background 0.25s ease, backdrop-filter 0.25s ease",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: "white",
+              borderRadius: "14px",
+              boxShadow: "0 25px 60px #00000030, 0 8px 20px #0000001a",
+              width: "100%",
+              maxWidth: "520px",
+              maxHeight: "92vh",
+              overflowY: "auto",
+              opacity: modalVisible ? 1 : 0,
+              transform: modalVisible ? "scale(1) translateY(0)" : "scale(0.96) translateY(10px)",
+              transition: "opacity 0.25s ease, transform 0.25s ease",
+            }}
+          >
+            {/* Modal header */}
+            <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid #f0f0f0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "1.05rem", fontWeight: 700, color: "#111827", margin: 0 }}>
+                  Mark Lost Item as Returned
+                </h2>
+                <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: "12px", color: "#6b7280", marginTop: "2px" }}>
+                  Confirm handover and update return details for this lost item
+                </p>
+              </div>
+              <button
+                onClick={closeModal}
+                style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid #e5e7eb", background: "#f9fafb", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#6b7280", transition: "all 0.15s" }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fee2e2"; (e.currentTarget as HTMLButtonElement).style.color = "#ef4444"; (e.currentTarget as HTMLButtonElement).style.borderColor = "#fecaca"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#f9fafb"; (e.currentTarget as HTMLButtonElement).style.color = "#6b7280"; (e.currentTarget as HTMLButtonElement).style.borderColor = "#e5e7eb"; }}
+                title="Close"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+
+              {/* Item Name (read-only) */}
+              <div>
+                <label className={fLabel} style={{ fontFamily: "DM Sans, sans-serif" }}>Item Name</label>
+                <div style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 8, padding: "10px 12px", fontSize: 14, color: "#374151", fontFamily: "DM Sans, sans-serif", display: "flex", alignItems: "center", gap: 8 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0891b2" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 9h6M9 12h6M9 15h4" /></svg>
+                  <span style={{ fontWeight: 600, color: "#111827" }}>{editItem.name}</span>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Item name read-only */}
-                <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 flex items-center gap-2">
-                  <span className="text-xs text-gray-500" style={{ fontFamily: "DM Sans, sans-serif" }}>Item:</span>
-                  <span className="text-sm font-semibold text-gray-900" style={{ fontFamily: "DM Sans, sans-serif" }}>{editItem.name}</span>
+
+              {/* Status */}
+              <div>
+                <label className={fLabel} style={{ fontFamily: "DM Sans, sans-serif" }}>
+                  Status <span style={{ color: "#ef4444" }}>*</span>
+                </label>
+                <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 8, padding: "10px 12px", fontSize: 14, fontFamily: "DM Sans, sans-serif", display: "flex", alignItems: "center", gap: 8, fontWeight: 600, color: "#15803d" }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                  Returned
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-2" style={{ fontFamily: "DM Sans, sans-serif" }}>Status <span className="text-red-400">*</span></label>
-                  <div
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50 text-gray-500 font-medium select-none"
-                    style={{ fontFamily: "DM Sans, sans-serif" }}
-                  >
-                    Returned
+              </div>
+
+              {/* Original Reporter Information */}
+              <div style={{ background: "#f0fdfa", border: "1px solid #99f6e4", borderRadius: 10, padding: "12px 14px" }}>
+                <p style={{ fontFamily: "Outfit, sans-serif", fontSize: 11, fontWeight: 700, color: "#0f766e", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: 6 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  Original Reporter Information
+                </p>
+                <div className="grid grid-cols-2 gap-2 text-xs" style={{ fontFamily: "DM Sans, sans-serif" }}>
+                  <div>
+                    <span className="text-teal-700 font-medium">Reported By:</span>{" "}
+                    <span className="text-gray-900 font-semibold">{editItem.reporterName || "Not specified"}</span>
+                  </div>
+                  <div>
+                    <span className="text-teal-700 font-medium">Roll No:</span>{" "}
+                    <span className="text-gray-900 font-semibold">{editItem.reporterRoll || "N/A"}</span>
+                  </div>
+                  <div>
+                    <span className="text-teal-700 font-medium">Phone:</span>{" "}
+                    <span className="text-gray-900 font-semibold">{editItem.reporterPhone || "N/A"}</span>
+                  </div>
+                  <div>
+                    <span className="text-teal-700 font-medium">Email:</span>{" "}
+                    <span className="text-gray-900 font-semibold truncate block" title={editItem.reporterEmail}>{editItem.reporterEmail || "N/A"}</span>
                   </div>
                 </div>
               </div>
-            )}
-            <div className="flex gap-3 mt-5">
+
+              {isModalLoading ? (
+                <div className="space-y-4 animate-pulse">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <div style={{ height: 16, width: 80, background: "#e2e8f0", borderRadius: 4, marginBottom: 6 }}></div>
+                      <div style={{ height: 38, background: "#e2e8f0", borderRadius: 8 }}></div>
+                    </div>
+                    <div>
+                      <div style={{ height: 16, width: 80, background: "#e2e8f0", borderRadius: 4, marginBottom: 6 }}></div>
+                      <div style={{ height: 38, background: "#e2e8f0", borderRadius: 8 }}></div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Student Name + Roll Number */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className={fLabel} style={{ fontFamily: "DM Sans, sans-serif" }}>
+                        Student Name (Collected By) <span style={{ color: "#ef4444" }}>*</span>
+                      </label>
+                      <input
+                        id="lost-edit-student-name"
+                        type="text"
+                        disabled={isSaveLoading}
+                        value={editStudentName}
+                        onChange={e => {
+                          setEditStudentName(e.target.value);
+                          setFieldErrors(prev => ({ ...prev, name: "" }));
+                        }}
+                        onBlur={e => setFieldErrors(prev => ({ ...prev, name: validateLostReturnStudentName(e.target.value) || "" }))}
+                        placeholder="Full student name"
+                        className={fInput}
+                        style={{ fontFamily: "DM Sans, sans-serif", ...(fieldErrors.name ? { borderColor: "#ef4444", boxShadow: "0 0 0 2px #fee2e2" } : {}) }}
+                      />
+                      {fieldErrors.name && <p style={{ color: "#ef4444", fontSize: 11, marginTop: 4, fontFamily: "DM Sans, sans-serif" }}>{fieldErrors.name}</p>}
+                    </div>
+                    <div>
+                      <label className={fLabel} style={{ fontFamily: "DM Sans, sans-serif" }}>
+                        Roll Number <span style={{ color: "#9ca3af", fontWeight: 400 }}>(Optional)</span>
+                      </label>
+                      <input
+                        id="lost-edit-roll-no"
+                        type="text"
+                        disabled={isSaveLoading}
+                        value={editRollNo}
+                        onChange={e => {
+                          setEditRollNo(e.target.value);
+                          setFieldErrors(prev => ({ ...prev, roll: "" }));
+                        }}
+                        onBlur={e => setFieldErrors(prev => ({ ...prev, roll: validateLostReturnRollNo(e.target.value) || "" }))}
+                        placeholder="e.g. 25bcaiot23"
+                        className={fInput}
+                        style={{ fontFamily: "DM Sans, sans-serif", ...(fieldErrors.roll ? { borderColor: "#ef4444", boxShadow: "0 0 0 2px #fee2e2" } : {}) }}
+                      />
+                      {fieldErrors.roll && <p style={{ color: "#ef4444", fontSize: 11, marginTop: 4, fontFamily: "DM Sans, sans-serif" }}>{fieldErrors.roll}</p>}
+                    </div>
+                  </div>
+
+                  {/* Phone + Email */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className={fLabel} style={{ fontFamily: "DM Sans, sans-serif" }}>
+                        Phone Number <span style={{ color: "#9ca3af", fontWeight: 400 }}>(Optional)</span>
+                      </label>
+                      <input
+                        id="lost-edit-phone"
+                        type="tel"
+                        disabled={isSaveLoading}
+                        value={editPhone}
+                        onChange={e => setEditPhone(e.target.value)}
+                        placeholder="+91 9876543210"
+                        className={fInput}
+                        style={{ fontFamily: "DM Sans, sans-serif" }}
+                      />
+                    </div>
+                    <div>
+                      <label className={fLabel} style={{ fontFamily: "DM Sans, sans-serif" }}>
+                        Email Address <span style={{ color: "#9ca3af", fontWeight: 400 }}>(Optional)</span>
+                      </label>
+                      <input
+                        id="lost-edit-email"
+                        type="email"
+                        disabled={isSaveLoading}
+                        value={editEmail}
+                        onChange={e => setEditEmail(e.target.value)}
+                        placeholder="student@campus.edu"
+                        className={fInput}
+                        style={{ fontFamily: "DM Sans, sans-serif" }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Returned Date + Time */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <style>{`
+                      #lost-edit-returned-date::-webkit-calendar-picker-indicator,
+                      #lost-edit-returned-time::-webkit-calendar-picker-indicator {
+                        display: none !important;
+                        -webkit-appearance: none !important;
+                      }
+                    `}</style>
+                    <div>
+                      <label className={fLabel} style={{ fontFamily: "DM Sans, sans-serif" }}>
+                        Returned Date <span style={{ color: "#ef4444" }}>*</span>
+                      </label>
+                      <input
+                        id="lost-edit-returned-date"
+                        type="date"
+                        disabled={isSaveLoading}
+                        value={editReturnedDate}
+                        max={getTodayDateString()}
+                        onChange={e => { setEditReturnedDate(e.target.value); setFieldErrors(prev => ({ ...prev, date: "", time: "" })); }}
+                        onBlur={e => {
+                          const d = e.target.value;
+                          setFieldErrors(prev => ({
+                            ...prev,
+                            date: validateReturnedDate(d, editItem?.dateFound ?? "") || "",
+                            time: editReturnedTime ? (validateReturnedTime(editReturnedTime, d) || "") : prev.time,
+                          }));
+                        }}
+                        className={fInput}
+                        style={{ fontFamily: "DM Sans, sans-serif", colorScheme: "light", ...(fieldErrors.date ? { borderColor: "#ef4444", boxShadow: "0 0 0 2px #fee2e2" } : {}) }}
+                      />
+                      {fieldErrors.date && <p style={{ color: "#ef4444", fontSize: 11, marginTop: 4, fontFamily: "DM Sans, sans-serif" }}>{fieldErrors.date}</p>}
+                    </div>
+                    <div>
+                      <label className={fLabel} style={{ fontFamily: "DM Sans, sans-serif" }}>
+                        Returned Time <span style={{ color: "#ef4444" }}>*</span>
+                      </label>
+                      <input
+                        id="lost-edit-returned-time"
+                        type="time"
+                        disabled={isSaveLoading}
+                        value={editReturnedTime}
+                        onChange={e => { setEditReturnedTime(e.target.value); setFieldErrors(prev => ({ ...prev, time: "" })); }}
+                        onBlur={e => setFieldErrors(prev => ({ ...prev, time: validateReturnedTime(e.target.value, editReturnedDate) || "" }))}
+                        className={fInput}
+                        style={{ fontFamily: "DM Sans, sans-serif", colorScheme: "light", ...(fieldErrors.time ? { borderColor: "#ef4444", boxShadow: "0 0 0 2px #fee2e2" } : {}) }}
+                      />
+                      {fieldErrors.time && <p style={{ color: "#ef4444", fontSize: 11, marginTop: 4, fontFamily: "DM Sans, sans-serif" }}>{fieldErrors.time}</p>}
+                    </div>
+                  </div>
+
+                  {/* Remarks */}
+                  <div>
+                    <label className={fLabel} style={{ fontFamily: "DM Sans, sans-serif", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span>Remarks / Notes <span style={{ color: "#9ca3af", fontWeight: 400 }}>(Optional)</span></span>
+                      <span style={{ color: editRemarks.trim().length > 500 ? "#ef4444" : "#9ca3af", fontSize: 11, fontWeight: 400 }}>{editRemarks.trim().length}/500</span>
+                    </label>
+                    <textarea
+                      id="lost-edit-remarks"
+                      rows={2}
+                      disabled={isSaveLoading}
+                      value={editRemarks}
+                      onChange={e => { setEditRemarks(e.target.value); setFieldErrors(prev => ({ ...prev, remarks: "" })); }}
+                      placeholder="Add any additional notes (e.g., student ID verified, handed over at helpdesk)…"
+                      className={fInput}
+                      style={{ fontFamily: "DM Sans, sans-serif", resize: "none", ...(fieldErrors.remarks ? { borderColor: "#ef4444", boxShadow: "0 0 0 2px #fee2e2" } : {}) }}
+                    />
+                    {fieldErrors.remarks && <p style={{ color: "#ef4444", fontSize: 11, marginTop: 4, fontFamily: "DM Sans, sans-serif" }}>{fieldErrors.remarks}</p>}
+                  </div>
+
+                  {/* Record Information */}
+                  <div style={{ background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 10, padding: "12px 16px" }}>
+                    <p style={{ fontFamily: "Outfit, sans-serif", fontSize: 11, fontWeight: 700, color: "#374151", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                      Record Information
+                    </p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {[
+                        { label: "Reported Date", value: editItem.dateFound },
+                        { label: "Location Lost", value: editItem.location },
+                        { label: "Created At", value: editItem.reportedAt || editItem.dateFound },
+                        { label: "Handled By", value: "Admin" },
+                      ].map(row => (
+                        <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#6b7280" }}>{row.label}</span>
+                          <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#111827", fontWeight: 500 }}>{row.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Modal footer */}
+            <div style={{ padding: "0 24px 20px", display: "flex", gap: 10 }}>
               <button
-                onClick={() => setEditItem(null)}
+                onClick={closeModal}
                 disabled={isSaveLoading}
-                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ fontFamily: "DM Sans, sans-serif" }}
+                style={{
+                  flex: 1, padding: "10px 0", borderRadius: 9,
+                  border: "1px solid #d1d5db", background: "white",
+                  color: "#374151", fontSize: 14, fontWeight: 500,
+                  fontFamily: "DM Sans, sans-serif",
+                  cursor: isSaveLoading ? "not-allowed" : "pointer",
+                  transition: "all 0.15s"
+                }}
+                onMouseEnter={e => { if (!isSaveLoading) (e.currentTarget as HTMLButtonElement).style.background = "#f9fafb"; }}
+                onMouseLeave={e => { if (!isSaveLoading) (e.currentTarget as HTMLButtonElement).style.background = "white"; }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveEdit}
-                disabled={isSaveLoading}
-                className="flex-1 px-4 py-2 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                style={{ fontFamily: "DM Sans, sans-serif" }}
+                disabled={isSaveLoading || !isReturnValid}
+                style={{
+                  flex: 1, padding: "10px 0", borderRadius: 9, border: "none",
+                  background: (!isSaveLoading && isReturnValid) ? "#0891b2" : "#e5e7eb",
+                  color: (!isSaveLoading && isReturnValid) ? "white" : "#9ca3af",
+                  fontSize: 14, fontWeight: 600, fontFamily: "DM Sans, sans-serif",
+                  cursor: (!isSaveLoading && isReturnValid) ? "pointer" : "not-allowed",
+                  transition: "all 0.15s",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  opacity: isSaveLoading ? 0.85 : 1,
+                }}
+                onMouseEnter={e => { if (!isSaveLoading && isReturnValid) (e.currentTarget as HTMLButtonElement).style.background = "#0e7490"; }}
+                onMouseLeave={e => { if (!isSaveLoading && isReturnValid) (e.currentTarget as HTMLButtonElement).style.background = "#0891b2"; }}
               >
                 {isSaveLoading ? (
                   <>
-                    <Loader2 className="animate-spin" size={14} />
-                    Processing...
+                    <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
+                    <span>Saving...</span>
                   </>
                 ) : (
-                  "Continue →"
+                  <>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+                    <span>Confirm & Mark as Returned</span>
+                  </>
                 )}
               </button>
             </div>

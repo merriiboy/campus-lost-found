@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import fs from 'fs';
 import net from 'net';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -68,21 +69,29 @@ function startService(name, color, cmd, args, cwd) {
 }
 
 async function main() {
-  // 1. Check & start MongoDB
-  const mongoRunning = await checkPort(27017);
-  if (mongoRunning) {
-    console.log('\x1b[32m[MongoDB]\x1b[0m Already running on 127.0.0.1:27017');
+  // 1. Check if using MongoDB Cloud (Atlas) or local MongoDB
+  const backendEnvPath = path.join(__dirname, 'backend', '.env');
+  const envContent = fs.existsSync(backendEnvPath) ? fs.readFileSync(backendEnvPath, 'utf8') : '';
+  const isCloudMongo = envContent.includes('mongodb+srv://') || (process.env.MONGODB_URI && process.env.MONGODB_URI.includes('mongodb+srv://'));
+
+  if (isCloudMongo) {
+    console.log('\x1b[32m[MongoDB]\x1b[0m Using MongoDB Cloud (Atlas) database from backend/.env');
   } else {
-    console.log('\x1b[32m[MongoDB]\x1b[0m Starting local MongoDB server...');
-    startService(
-      'MongoDB',
-      '\x1b[32m',
-      mongodPath,
-      ['--dbpath', `"${mongoDataDir}"`, '--port', '27017', '--bind_ip', '127.0.0.1'],
-      __dirname
-    );
-    // Wait 2 seconds for MongoDB to initialize
-    await new Promise((r) => setTimeout(r, 2000));
+    const mongoRunning = await checkPort(27017);
+    if (mongoRunning) {
+      console.log('\x1b[32m[MongoDB]\x1b[0m Already running on 127.0.0.1:27017');
+    } else {
+      console.log('\x1b[32m[MongoDB]\x1b[0m Starting local MongoDB server...');
+      startService(
+        'MongoDB',
+        '\x1b[32m',
+        mongodPath,
+        ['--dbpath', `"${mongoDataDir}"`, '--port', '27017', '--bind_ip', '127.0.0.1'],
+        __dirname
+      );
+      // Wait 2 seconds for MongoDB to initialize
+      await new Promise((r) => setTimeout(r, 2000));
+    }
   }
 
   // 2. Start Backend API
@@ -103,8 +112,8 @@ async function main() {
   startService(
     'Frontend',
     '\x1b[35m',
-    npxCmd,
-    ['vite', '--host', '0.0.0.0', '--port', '5173'],
+    npmCmd,
+    ['run', 'dev', '--', '--host', '0.0.0.0', '--port', '5173'],
     __dirname
   );
 

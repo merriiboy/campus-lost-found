@@ -4124,6 +4124,7 @@ function LostItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { it
         reporterPhone: editItem.reporterPhone,
         reporterEmail: editItem.reporterEmail,
       });
+      setItems?.(prev => prev.filter(i => i.id !== editItem.id));
       toast.success("Item marked as Returned", {
         description: `${editItem.name} has been moved to Returned History.`,
         duration: 3500,
@@ -4632,6 +4633,7 @@ function FoundItemsPage({ items, setItems, onReturn, isLoading, onRefresh }: { i
           reporterPhone: "",
           reporterEmail: "",
         });
+        setItems?.(prev => prev.filter(i => i.id !== editItem.id));
         toast.success("Item marked as Returned", {
           description: `${editItem.name} has been moved to Returned History.`,
           duration: 3500,
@@ -5327,11 +5329,16 @@ function AdminView({ onLogout }: { onLogout: () => void }) {
   };
 
   const refreshData = async () => {
-    if (activeNav === "lost-items") setLostIsStale(true);
-    if (activeNav === "found-items") setFoundIsStale(true);
-    if (activeNav === "expired-items") {
+    if (activeNav === "lost-items") {
+      setLostIsStale(true);
+      await loadNavData("lost-items", true);
+    } else if (activeNav === "found-items") {
+      setFoundIsStale(true);
+      await loadNavData("found-items", true);
+    } else if (activeNav === "expired-items") {
       setLostIsStale(true);
       setFoundIsStale(true);
+      await loadNavData("expired-items", true);
     }
   };
 

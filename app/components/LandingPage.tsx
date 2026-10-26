@@ -127,8 +127,8 @@ export default function LandingPage({ onBrowseFound, onAdminLogin, initialStats 
 
       setStats({
         total: lostActiveTotal + foundActiveTotal + lostReturnedTotal + foundReturnedTotal,
-        lost: lostActiveTotal + lostReturnedTotal,
-        found: foundActiveTotal + foundReturnedTotal,
+        lost: lostActiveTotal,
+        found: foundActiveTotal,
         returned: lostReturnedTotal + foundReturnedTotal,
       });
     } catch (err) {

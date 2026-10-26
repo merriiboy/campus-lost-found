@@ -1195,6 +1195,9 @@ function PublicBrowseView({ type, onBack }: { type: "lost" | "found"; onBack: ()
       <div className="max-w-6xl mx-auto px-6 py-8">
         <CombinedItemsPage initialFilter="found" />
       </div>
+      <footer className="border-t border-gray-200 py-6 text-center text-xs text-gray-500" style={{ fontFamily: "DM Sans, sans-serif" }}>
+        © 2026 merin@2026. All rights reserved.
+      </footer>
       <ScrollToTopButton />
     </div>
   );
@@ -3745,6 +3748,9 @@ function AdminSidebar({ active, setActive, onLogoutRequest, isOpen, onClose, isL
           >
             {isLoggingOut ? <Loader2 size={14} className="animate-spin" /> : <LogOut size={14} />}
           </button>
+        </div>
+        <div className="px-3 py-2 border-t border-gray-100 text-[10px] text-gray-400 text-center" style={{ fontFamily: "DM Sans, sans-serif" }}>
+          © 2026 merin@2026
         </div>
       </div>
     </aside>

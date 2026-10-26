@@ -307,7 +307,7 @@ export default function LandingPage({ onBrowseFound, onAdminLogin, initialStats 
         </div>
 
         {/* Scroll-down hint */}
-        <div className="relative shrink-0 pb-6 flex justify-center">
+        <div className="relative shrink-0 pb-6 flex flex-col items-center gap-1.5">
           <button
             onClick={scrollToStats}
             className="flex flex-col items-center gap-1 text-slate-400 hover:text-cyan-600 transition-colors"
@@ -315,6 +315,9 @@ export default function LandingPage({ onBrowseFound, onAdminLogin, initialStats 
             <span className="text-xs" style={{ fontFamily: "DM Sans, sans-serif" }}>More Details</span>
             <ChevronDown size={18} className="animate-bounce" />
           </button>
+          <p className="text-[11px] text-slate-400" style={{ fontFamily: "DM Sans, sans-serif" }}>
+            © 2026 merin@2026
+          </p>
         </div>
       </section>
 
@@ -413,6 +416,16 @@ export default function LandingPage({ onBrowseFound, onAdminLogin, initialStats 
               </p>
             </div>
           </div>
+
+          {/* Footer with Copyright */}
+          <footer className="pt-6 pb-10 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500" style={{ fontFamily: "DM Sans, sans-serif" }}>
+            <p className="font-semibold text-slate-700">
+              © 2026 merin@2026. All rights reserved.
+            </p>
+            <p className="text-slate-400">
+              Campus Lost and Found System
+            </p>
+          </footer>
 
         </div>
       </section>

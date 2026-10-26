@@ -248,6 +248,11 @@ export default function LoginPage({ onLogin, onBack }: LoginPageProps) {
             )}
           </div>
         </div>
+
+        {/* Copyright notice */}
+        <p className="mt-6 text-center text-xs text-gray-400" style={{ fontFamily: "DM Sans, sans-serif" }}>
+          © 2026 merin@2026. All rights reserved.
+        </p>
       </div>
     </div>
   );

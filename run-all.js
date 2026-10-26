@@ -109,11 +109,12 @@ async function main() {
 
   // 3. Start Frontend UI
   console.log('\x1b[35m[Frontend]\x1b[0m Starting Vite dev server on http://localhost:5173 ...');
+  const viteBin = `"${path.join(__dirname, 'node_modules', 'vite', 'bin', 'vite.js')}"`;
   startService(
     'Frontend',
     '\x1b[35m',
-    npmCmd,
-    ['run', 'dev', '--', '--host', '0.0.0.0', '--port', '5173'],
+    'node',
+    [viteBin, '--host', '0.0.0.0', '--port', '5173'],
     __dirname
   );
 

@@ -1,42 +1,39 @@
 // ==============================================================================
-// CAMPUS LOST AND FOUND SYSTEM - MINI PROJECT
-// Main Application Logic (Pure JavaScript)
-// Handles Item Display, Searching, Reporting, and Handover / Return Modals
+// Application JavaScript (app.js)
+// Simple Student Project Code for Item Listing, Reporting, and Returning
 // ==============================================================================
 
-// Global State
-let currentTab = 'browse';
-let activeTypeFilter = 'All';
-let activeCategoryFilter = 'All';
-let currentSearchTerm = '';
-let currentReturnItemId = null;
+let currentReturnId = null;
 
-// ------------------------------------------------------------------------------
-// Tab Switching
-// ------------------------------------------------------------------------------
+// 1. Tab Switching Function
 function switchTab(tabId) {
-  currentTab = tabId;
-
-  // Update tab buttons
+  // Update Tab Buttons
   document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tab === tabId);
+    btn.classList.remove('active');
+  });
+  const activeBtn = document.getElementById('btn-tab-' + tabId);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  // Update Nav Links
+  document.querySelectorAll('.tab-link').forEach(link => {
+    link.classList.remove('active');
   });
 
-  // Update tab contents
-  document.querySelectorAll('.tab-content').forEach(content => {
-    content.classList.toggle('active', content.id === `tab-${tabId}`);
+  // Update Tab Sections
+  document.querySelectorAll('.tab-content').forEach(section => {
+    section.classList.remove('active');
   });
+  const activeSection = document.getElementById('tab-' + tabId);
+  if (activeSection) activeSection.classList.add('active');
 
-  // If switched to browse tab, refresh list and stats
+  // If viewing items, reload data
   if (tabId === 'browse') {
     fetchStats();
     fetchItems();
   }
 }
 
-// ------------------------------------------------------------------------------
-// Fetch Live Statistics
-// ------------------------------------------------------------------------------
+// 2. Fetch Live Statistics
 async function fetchStats() {
   try {
     const res = await fetch('/api/stats');
@@ -47,394 +44,254 @@ async function fetchStats() {
       document.getElementById('stat-returned').textContent = data.stats.totalReturned;
     }
   } catch (err) {
-    console.error('Failed to load stats:', err);
+    console.log('Error fetching stats:', err);
   }
 }
 
-// ------------------------------------------------------------------------------
-// Fetch & Render Items
-// ------------------------------------------------------------------------------
+// 3. Fetch and Display Items
 async function fetchItems() {
-  const grid = document.getElementById('items-grid');
-  if (!grid) return;
+  const container = document.getElementById('items-list');
+  if (!container) return;
 
-  grid.innerHTML = `
-    <div class="empty-state" style="grid-column: 1 / -1;">
-      <p>⏳ Loading items from database...</p>
-    </div>
-  `;
+  const searchVal = document.getElementById('search-input').value.trim();
+  const typeVal = document.getElementById('filter-type').value;
+  const catVal = document.getElementById('filter-category').value;
+
+  // Build query parameters
+  const params = new URLSearchParams();
+  if (typeVal === 'Lost' || typeVal === 'Found') {
+    params.append('type', typeVal);
+    params.append('status', 'Active');
+  } else if (typeVal === 'Returned') {
+    params.append('status', 'Returned');
+  }
+  if (catVal !== 'All') {
+    params.append('category', catVal);
+  }
+  if (searchVal) {
+    params.append('search', searchVal);
+  }
+
+  container.innerHTML = '<div class="empty-box">Loading items from database...</div>';
 
   try {
-    const params = new URLSearchParams();
-    if (activeTypeFilter === 'Lost' || activeTypeFilter === 'Found') {
-      params.append('type', activeTypeFilter);
-      params.append('status', 'Active');
-    } else if (activeTypeFilter === 'Returned') {
-      params.append('status', 'Returned');
+    const res = await fetch('/api/items?' + params.toString());
+    const data = await res.json();
+
+    if (!data.success || !data.items || data.items.length === 0) {
+      container.innerHTML = '<div class="empty-box">No items found matching the selected filter.</div>';
+      return;
     }
 
-    if (activeCategoryFilter !== 'All') {
-      params.append('category', activeCategoryFilter);
-    }
+    // Render cards
+    container.innerHTML = data.items.map(item => {
+      const isReturned = item.status === 'Returned';
+      const isLost = item.type === 'Lost';
+      const badgeClass = isReturned ? 'badge-returned' : (isLost ? 'badge-lost' : 'badge-found');
+      const badgeLabel = isReturned ? 'RETURNED' : (isLost ? 'LOST' : 'FOUND');
 
-    if (currentSearchTerm.trim()) {
-      params.append('search', currentSearchTerm.trim());
-    }
+      return `
+        <div class="item-card">
+          <div class="card-top">
+            <h3>${item.title}</h3>
+            <span class="badge ${badgeClass}">${badgeLabel}</span>
+          </div>
 
-    const res = await fetch(`/api/items?${params.toString()}`);
+          <span class="badge-category">${item.category || 'General'}</span>
+          <p class="description">${item.description}</p>
+
+          <div class="item-meta">
+            <div><strong>Date:</strong> ${item.date}</div>
+            <div><strong>Location:</strong> ${item.location}</div>
+            ${item.collectFrom ? `<div><strong>Collect From:</strong> ${item.collectFrom}</div>` : ''}
+            <div><strong>Reported By:</strong> ${item.reporterName} ${item.reporterRoll ? `(${item.reporterRoll})` : ''}</div>
+            ${item.reporterPhone ? `<div><strong>Phone:</strong> ${item.reporterPhone}</div>` : ''}
+            ${isReturned ? `
+              <div style="grid-column: 1 / -1; color: #27ae60; font-weight: bold;">
+                Handed over to: ${item.returnedToName} ${item.returnedToRoll ? `(${item.returnedToRoll})` : ''} on ${item.returnedDate || 'N/A'}
+              </div>
+            ` : ''}
+          </div>
+
+          <div class="card-bottom">
+            <span style="color: #888;">Item ID: #${item._id.substring(item._id.length - 6).toUpperCase()}</span>
+            ${!isReturned ? `
+              <button class="btn btn-sm btn-success" onclick="openReturnModal('${item._id}', '${item.title.replace(/'/g, "\\'")}')">
+                Mark as Returned
+              </button>
+            ` : `
+              <span style="color: #27ae60; font-weight: bold;">✓ Claimed &amp; Returned</span>
+            `}
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    container.innerHTML = '<div class="empty-box">Failed to load items from server.</div>';
+  }
+}
+
+// 4. Submit Lost Item
+async function submitLostItem(e) {
+  e.preventDefault();
+
+  const payload = {
+    type: 'Lost',
+    title: document.getElementById('lost-title').value.trim(),
+    category: document.getElementById('lost-category').value,
+    date: document.getElementById('lost-date').value,
+    location: document.getElementById('lost-location').value.trim(),
+    description: document.getElementById('lost-desc').value.trim(),
+    reporterName: document.getElementById('lost-name').value.trim(),
+    reporterRoll: document.getElementById('lost-roll').value.trim(),
+    reporterPhone: document.getElementById('lost-phone').value.trim(),
+    reporterEmail: document.getElementById('lost-email').value.trim()
+  };
+
+  try {
+    const res = await fetch('/api/items', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
     const data = await res.json();
 
     if (data.success) {
-      renderItems(data.items);
+      showAlert('lost-alert', 'Lost item report submitted successfully!', true);
+      document.getElementById('form-lost').reset();
+      setTimeout(() => {
+        document.getElementById('lost-alert').style.display = 'none';
+        switchTab('browse');
+      }, 1200);
     } else {
-      grid.innerHTML = `<div class="empty-state"><p>❌ Failed to load items.</p></div>`;
+      showAlert('lost-alert', data.message || 'Error submitting report.', false);
     }
   } catch (err) {
-    console.error('Fetch items error:', err);
-    grid.innerHTML = `<div class="empty-state"><p>❌ Connection error. Please check server.</p></div>`;
+    showAlert('lost-alert', 'Server error. Please check server connection.', false);
   }
 }
 
-// Render item cards
-function renderItems(items) {
-  const grid = document.getElementById('items-grid');
-  if (!grid) return;
+// 5. Submit Found Item
+async function submitFoundItem(e) {
+  e.preventDefault();
 
-  if (!items || items.length === 0) {
-    grid.innerHTML = `
-      <div class="empty-state">
-        <h3>No Items Found</h3>
-        <p>No lost or found items match your current filter. Try selecting "All" or a different category.</p>
-      </div>
-    `;
-    return;
-  }
+  const payload = {
+    type: 'Found',
+    title: document.getElementById('found-title').value.trim(),
+    category: document.getElementById('found-category').value,
+    date: document.getElementById('found-date').value,
+    location: document.getElementById('found-location').value.trim(),
+    collectFrom: document.getElementById('found-collect').value.trim(),
+    description: document.getElementById('found-desc').value.trim(),
+    reporterName: document.getElementById('found-name').value.trim(),
+    reporterPhone: document.getElementById('found-phone').value.trim()
+  };
 
-  grid.innerHTML = items.map(item => {
-    const isReturned = item.status === 'Returned';
-    const isLost = item.type === 'Lost';
-    
-    // Choose appropriate badge
-    let badgeClass = isReturned ? 'badge-returned' : (isLost ? 'badge-lost' : 'badge-found');
-    let badgeText = isReturned ? 'RETURNED' : (isLost ? 'LOST ITEM' : 'FOUND ITEM');
-
-    return `
-      <div class="item-card">
-        <div>
-          <div class="card-header">
-            <h3 class="card-title">${escapeHtml(item.title)}</h3>
-            <span class="badge ${badgeClass}">${badgeText}</span>
-          </div>
-
-          <span class="badge-category">${escapeHtml(item.category || 'Others')}</span>
-          <p class="card-desc">${escapeHtml(item.description)}</p>
-
-          <div class="card-details">
-            <div class="detail-row">
-              <span>📅</span>
-              <strong>Date:</strong> ${escapeHtml(item.date)}
-            </div>
-            <div class="detail-row">
-              <span>📍</span>
-              <strong>Location:</strong> ${escapeHtml(item.location)}
-            </div>
-            ${item.type === 'Found' && item.collectFrom ? `
-              <div class="detail-row">
-                <span>🏢</span>
-                <strong>Collect From:</strong> ${escapeHtml(item.collectFrom)}
-              </div>
-            ` : ''}
-            <div class="detail-row">
-              <span>👤</span>
-              <strong>Reported By:</strong> ${escapeHtml(item.reporterName)} ${item.reporterRoll ? `(${escapeHtml(item.reporterRoll)})` : ''}
-            </div>
-            ${item.reporterPhone ? `
-              <div class="detail-row">
-                <span>📞</span>
-                <strong>Contact:</strong> ${escapeHtml(item.reporterPhone)}
-              </div>
-            ` : ''}
-            ${item.reporterEmail ? `
-              <div class="detail-row">
-                <span>✉️</span>
-                <strong>Email:</strong> ${escapeHtml(item.reporterEmail)}
-              </div>
-            ` : ''}
-            ${isReturned ? `
-              <div class="detail-row" style="color: #047857; margin-top: 4px; padding-top: 4px; border-top: 1px dashed #a7f3d0;">
-                <span>✅</span>
-                <strong>Handed Over To:</strong> ${escapeHtml(item.returnedToName)} ${item.returnedToRoll ? `(${escapeHtml(item.returnedToRoll)})` : ''} on ${escapeHtml(item.returnedDate || 'N/A')}
-              </div>
-            ` : ''}
-          </div>
-        </div>
-
-        <div class="card-footer">
-          <span style="font-size: 0.78rem; color: #94a3b8;">
-            ID: #${item._id.substring(item._id.length - 6).toUpperCase()}
-          </span>
-          ${!isReturned ? `
-            <button class="btn btn-outline btn-sm" onclick="openReturnModal('${item._id}', '${escapeHtml(item.title)}')">
-              ✔ Mark as Returned
-            </button>
-          ` : `
-            <span style="font-size: 0.85rem; font-weight: 600; color: #059669;">
-              ✓ Handover Completed
-            </span>
-          `}
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-// ------------------------------------------------------------------------------
-// Form Submissions: Report Lost Item
-// ------------------------------------------------------------------------------
-function initReportForms() {
-  // Pre-fill user contact info if logged in
-  const user = getCurrentUser();
-
-  const lostForm = document.getElementById('form-report-lost');
-  if (lostForm) {
-    if (user) {
-      document.getElementById('lost-reporter-name').value = user.name || '';
-      document.getElementById('lost-reporter-roll').value = user.rollNo || '';
-      document.getElementById('lost-reporter-phone').value = user.phone || '';
-      document.getElementById('lost-reporter-email').value = user.email || '';
-    }
-
-    // Set today as default date
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('lost-date').value = today;
-
-    lostForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const submitBtn = lostForm.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Submitting...';
-
-      const payload = {
-        type: 'Lost',
-        title: document.getElementById('lost-title').value.trim(),
-        category: document.getElementById('lost-category').value,
-        date: document.getElementById('lost-date').value,
-        location: document.getElementById('lost-location').value.trim(),
-        description: document.getElementById('lost-description').value.trim(),
-        reporterName: document.getElementById('lost-reporter-name').value.trim(),
-        reporterRoll: document.getElementById('lost-reporter-roll').value.trim(),
-        reporterPhone: document.getElementById('lost-reporter-phone').value.trim(),
-        reporterEmail: document.getElementById('lost-reporter-email').value.trim(),
-      };
-
-      try {
-        const res = await fetch('/api/items', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-
-        if (data.success) {
-          showAlert('lost-form-alert', '✔ Lost item report submitted successfully!', true);
-          lostForm.reset();
-          setTimeout(() => {
-            document.getElementById('lost-form-alert').style.display = 'none';
-            switchTab('browse');
-          }, 1500);
-        } else {
-          showAlert('lost-form-alert', data.message || 'Failed to submit report.', false);
-        }
-      } catch (err) {
-        console.error(err);
-        showAlert('lost-form-alert', 'Network error. Please try again.', false);
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit Lost Item Report';
-      }
+  try {
+    const res = await fetch('/api/items', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
-  }
+    const data = await res.json();
 
-  // Found Form
-  const foundForm = document.getElementById('form-report-found');
-  if (foundForm) {
-    if (user) {
-      document.getElementById('found-reporter-name').value = user.name || '';
-      document.getElementById('found-reporter-phone').value = user.phone || '';
+    if (data.success) {
+      showAlert('found-alert', 'Found item report submitted successfully!', true);
+      document.getElementById('form-found').reset();
+      setTimeout(() => {
+        document.getElementById('found-alert').style.display = 'none';
+        switchTab('browse');
+      }, 1200);
+    } else {
+      showAlert('found-alert', data.message || 'Error submitting report.', false);
     }
-
-    // Set today as default date
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('found-date').value = today;
-
-    foundForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const submitBtn = foundForm.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Submitting...';
-
-      const payload = {
-        type: 'Found',
-        title: document.getElementById('found-title').value.trim(),
-        category: document.getElementById('found-category').value,
-        date: document.getElementById('found-date').value,
-        location: document.getElementById('found-location').value.trim(),
-        collectFrom: document.getElementById('found-collect-from').value.trim(),
-        description: document.getElementById('found-description').value.trim(),
-        reporterName: document.getElementById('found-reporter-name').value.trim(),
-        reporterPhone: document.getElementById('found-reporter-phone').value.trim(),
-        reporterEmail: document.getElementById('found-reporter-email').value.trim(),
-      };
-
-      try {
-        const res = await fetch('/api/items', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-
-        if (data.success) {
-          showAlert('found-form-alert', '✔ Found item report submitted successfully!', true);
-          foundForm.reset();
-          setTimeout(() => {
-            document.getElementById('found-form-alert').style.display = 'none';
-            switchTab('browse');
-          }, 1500);
-        } else {
-          showAlert('found-form-alert', data.message || 'Failed to submit report.', false);
-        }
-      } catch (err) {
-        console.error(err);
-        showAlert('found-form-alert', 'Network error. Please try again.', false);
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit Found Item Report';
-      }
-    });
+  } catch (err) {
+    showAlert('found-alert', 'Server error. Please check server connection.', false);
   }
 }
 
-// ------------------------------------------------------------------------------
-// Handover / Return Modal Logic
-// ------------------------------------------------------------------------------
-function openReturnModal(itemId, itemName) {
-  currentReturnItemId = itemId;
-  document.getElementById('modal-item-name').textContent = itemName;
+// 6. Return / Handover Modal Logic
+function openReturnModal(id, title) {
+  currentReturnId = id;
+  document.getElementById('modal-item-title').textContent = title;
+  document.getElementById('return-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('return-student-name').value = '';
+  document.getElementById('return-student-roll').value = '';
+  document.getElementById('return-remarks').value = '';
 
-  // Set today as default return date
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('modal-return-date').value = today;
-  document.getElementById('modal-recipient-name').value = '';
-  document.getElementById('modal-recipient-roll').value = '';
-  document.getElementById('modal-remarks').value = '';
-
-  const modal = document.getElementById('return-modal');
-  modal.classList.add('active');
+  document.getElementById('return-modal').classList.add('active');
 }
 
 function closeReturnModal() {
-  const modal = document.getElementById('return-modal');
-  modal.classList.remove('active');
-  currentReturnItemId = null;
+  document.getElementById('return-modal').classList.remove('active');
+  currentReturnId = null;
 }
 
-async function handleConfirmReturn(e) {
+async function confirmReturn(e) {
   e.preventDefault();
-  if (!currentReturnItemId) return;
+  if (!currentReturnId) return;
 
-  const recipientName = document.getElementById('modal-recipient-name').value.trim();
-  const recipientRoll = document.getElementById('modal-recipient-roll').value.trim();
-  const returnDate = document.getElementById('modal-return-date').value;
-  const remarks = document.getElementById('modal-remarks').value.trim();
-
-  if (!recipientName) {
-    alert('Please enter the name of the student who collected the item.');
-    return;
-  }
-
-  const submitBtn = document.getElementById('btn-confirm-return');
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Saving...';
+  const returnedToName = document.getElementById('return-student-name').value.trim();
+  const returnedToRoll = document.getElementById('return-student-roll').value.trim();
+  const returnedDate = document.getElementById('return-date').value;
+  const remarks = document.getElementById('return-remarks').value.trim();
 
   try {
-    const res = await fetch(`/api/items/${currentReturnItemId}/return`, {
+    const res = await fetch('/api/items/' + currentReturnId + '/return', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        returnedToName: recipientName,
-        returnedToRoll: recipientRoll,
-        returnedDate: returnDate,
-        remarks: remarks
-      })
+      body: JSON.stringify({ returnedToName, returnedToRoll, returnedDate, remarks })
     });
-
     const data = await res.json();
+
     if (data.success) {
-      alert(`Success: ${data.message}`);
+      alert(data.message);
       closeReturnModal();
       fetchStats();
       fetchItems();
     } else {
-      alert(`Error: ${data.message}`);
+      alert(data.message || 'Failed to update item.');
     }
   } catch (err) {
-    console.error(err);
-    alert('Failed to connect to server.');
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Confirm & Mark as Returned';
+    alert('Server communication error.');
   }
 }
 
-// ------------------------------------------------------------------------------
-// Search & Filter Event Handlers
-// ------------------------------------------------------------------------------
-function initFilters() {
-  const searchInput = document.getElementById('search-input');
-  if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-      currentSearchTerm = e.target.value;
-      fetchItems();
-    });
-  }
-
-  const typeSelect = document.getElementById('filter-type');
-  if (typeSelect) {
-    typeSelect.addEventListener('change', (e) => {
-      activeTypeFilter = e.target.value;
-      fetchItems();
-    });
-  }
-
-  const categorySelect = document.getElementById('filter-category');
-  if (categorySelect) {
-    categorySelect.addEventListener('change', (e) => {
-      activeCategoryFilter = e.target.value;
-      fetchItems();
-    });
-  }
-}
-
-// ------------------------------------------------------------------------------
-// Initialize App on DOM Load
-// ------------------------------------------------------------------------------
+// 7. Initialize Page
 document.addEventListener('DOMContentLoaded', () => {
   fetchStats();
   fetchItems();
-  initReportForms();
-  initFilters();
 
-  // Tab button listeners
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      switchTab(btn.dataset.tab);
-    });
-  });
+  // Pre-fill logged in student info if available
+  const user = getUser();
+  if (user) {
+    const lostName = document.getElementById('lost-name');
+    if (lostName) lostName.value = user.name || '';
+    const lostRoll = document.getElementById('lost-roll');
+    if (lostRoll) lostRoll.value = user.rollNo || '';
+    const lostPhone = document.getElementById('lost-phone');
+    if (lostPhone) lostPhone.value = user.phone || '';
+    const lostEmail = document.getElementById('lost-email');
+    if (lostEmail) lostEmail.value = user.email || '';
 
-  // Modal return form listener
-  const returnForm = document.getElementById('form-confirm-return');
-  if (returnForm) {
-    returnForm.addEventListener('submit', handleConfirmReturn);
+    const foundName = document.getElementById('found-name');
+    if (foundName) foundName.value = user.name || '';
+    const foundPhone = document.getElementById('found-phone');
+    if (foundPhone) foundPhone.value = user.phone || '';
   }
+
+  // Pre-set today's date
+  const today = new Date().toISOString().split('T')[0];
+  if (document.getElementById('lost-date')) document.getElementById('lost-date').value = today;
+  if (document.getElementById('found-date')) document.getElementById('found-date').value = today;
+
+  // Search & Filter change events
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) searchInput.addEventListener('input', fetchItems);
+
+  const filterType = document.getElementById('filter-type');
+  if (filterType) filterType.addEventListener('change', fetchItems);
+
+  const filterCategory = document.getElementById('filter-category');
+  if (filterCategory) filterCategory.addEventListener('change', fetchItems);
 });

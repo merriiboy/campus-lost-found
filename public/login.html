@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - Campus Lost and Found</title>
+  <title>Login - Campus Lost & Found</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -11,63 +11,55 @@
   <!-- Navigation Bar -->
   <nav class="navbar">
     <div class="container nav-container">
-      <a href="index.html" class="nav-brand">
-        🎓 Campus <span>Lost & Found</span>
-      </a>
+      <a href="index.html" class="nav-brand">Campus Lost &amp; Found</a>
       <ul class="nav-links">
         <li><a href="index.html">← Back to Home</a></li>
       </ul>
-      <div id="nav-auth" class="nav-auth"></div>
     </div>
   </nav>
 
-  <!-- Login Card Section -->
-  <div class="auth-page">
-    <div class="auth-card">
-      <div class="auth-header">
-        <div class="logo">🔐</div>
-        <h2>Welcome Back</h2>
-        <p>Sign in to report or claim lost belongings</p>
-      </div>
+  <!-- Login Form Box -->
+  <main class="container" style="margin-top: 40px; margin-bottom: 40px;">
+    <div class="form-box" style="max-width: 420px;">
+      <h2>Student &amp; Staff Login</h2>
+      <p class="subtitle">Please enter your credentials to log in.</p>
 
-      <!-- Alert Box -->
       <div id="login-alert" class="alert"></div>
 
-      <!-- Login Form -->
-      <form id="login-form">
-        <div class="form-group" style="margin-bottom: 14px;">
-          <label for="login-email">Email Address <span class="required">*</span></label>
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>Email Address *</label>
           <input type="email" id="login-email" required placeholder="e.g. student@campus.edu">
         </div>
 
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label for="login-password">Password <span class="required">*</span></label>
-          <input type="password" id="login-password" required placeholder="••••••••">
+        <div class="form-group">
+          <label>Password *</label>
+          <input type="password" id="login-password" required placeholder="Enter password">
         </div>
 
-        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
-          Sign In
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+          Log In
         </button>
       </form>
 
-      <!-- Examiner / Demo Credentials Hint -->
-      <div class="demo-credentials">
-        <strong>Demo Admin Credentials:</strong><br>
+      <!-- Examiner Demo Credentials -->
+      <div style="background: #eef2f7; border: 1px solid #d1d8e0; border-radius: 4px; padding: 10px; margin-top: 18px; font-size: 0.85rem;">
+        <strong>Demo Admin Account:</strong><br>
         Email: <code>admin@campus.edu</code><br>
         Password: <code>admin@12345</code>
       </div>
 
-      <div class="auth-footer">
-        <p>Don't have an account yet? <a href="register.html">Register here</a></p>
-      </div>
+      <p style="text-align: center; margin-top: 15px; font-size: 0.9rem;">
+        New student? <a href="register.html" style="color: #3498db; font-weight: bold;">Create an account</a>
+      </p>
     </div>
-  </div>
+  </main>
 
   <!-- Footer -->
   <footer>
     <div class="container">
-      <p>Campus Lost &amp; Found System • Mini Project</p>
-      <p style="font-size: 0.8rem; color: #64748b;">merin@2026</p>
+      <p>Campus Lost &amp; Found System • Student Mini Project</p>
+      <p style="color: #7f8c8d; font-size: 0.8rem; margin-top: 4px;">merin@2026</p>
     </div>
   </footer>
 

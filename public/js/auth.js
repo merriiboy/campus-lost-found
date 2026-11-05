@@ -1,186 +1,124 @@
 // ==============================================================================
-// CAMPUS LOST AND FOUND SYSTEM - MINI PROJECT
-// Authentication Logic (Pure JavaScript)
-// Handles Login, Registration, Session, and Navigation Bar Updates
+// Authentication JavaScript (auth.js)
+// Simple Student Project Code for Login, Registration & Session
 // ==============================================================================
 
-// Helper: Get currently logged-in user from localStorage
-function getCurrentUser() {
-  const userJson = localStorage.getItem('currentUser');
-  if (!userJson) return null;
+// Helper: Get logged-in user from browser storage
+function getUser() {
+  const userStr = localStorage.getItem('user');
+  if (!userStr) return null;
   try {
-    return JSON.parse(userJson);
+    return JSON.parse(userStr);
   } catch (e) {
     return null;
   }
 }
 
-// Helper: Show alert message inside an element
-function showAlert(elementId, message, isSuccess = false) {
-  const alertEl = document.getElementById(elementId);
-  if (!alertEl) return;
-  alertEl.textContent = message;
-  alertEl.className = 'alert show ' + (isSuccess ? 'alert-success' : 'alert-error');
-  alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+// Helper: Display success/error alert message
+function showAlert(elementId, message, isSuccess) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  el.textContent = message;
+  el.className = 'alert ' + (isSuccess ? 'alert-success' : 'alert-error');
 }
 
-// ------------------------------------------------------------------------------
-// Navigation Bar Session Checker (Runs on all pages)
-// ------------------------------------------------------------------------------
-function updateNavigationAuth() {
-  const navAuthEl = document.getElementById('nav-auth');
-  if (!navAuthEl) return;
+// Update navbar with logged-in student details
+function updateNavbar() {
+  const slot = document.getElementById('nav-auth-slot');
+  if (!slot) return;
 
-  const user = getCurrentUser();
-
+  const user = getUser();
   if (user) {
-    // User is logged in
-    navAuthEl.innerHTML = `
-      <span style="font-size: 0.9rem; color: #cbd5e1;">
-        👤 <strong>${escapeHtml(user.name)}</strong> (${user.role === 'admin' ? 'Admin' : escapeHtml(user.rollNo)})
+    slot.innerHTML = `
+      <span style="color: #ecf0f1; font-size: 0.9rem;">
+        👤 <strong>${user.name}</strong> (${user.rollNo || user.role})
       </span>
-      <button onclick="handleLogout()" class="btn btn-outline btn-sm">Logout</button>
+      <button onclick="handleLogout()" class="btn btn-sm btn-secondary" style="margin-left: 8px;">Logout</button>
     `;
   } else {
-    // User is a guest
-    navAuthEl.innerHTML = `
-      <a href="login.html" class="btn btn-outline btn-sm">Login</a>
-      <a href="register.html" class="btn btn-primary btn-sm">Register</a>
+    slot.innerHTML = `
+      <a href="login.html" class="btn btn-sm btn-primary">Login</a>
+      <a href="register.html" class="btn btn-sm btn-secondary" style="margin-left: 5px;">Register</a>
     `;
   }
 }
 
-// ------------------------------------------------------------------------------
 // Handle User Logout
-// ------------------------------------------------------------------------------
 function handleLogout() {
-  if (confirm('Are you sure you want to log out?')) {
-    localStorage.removeItem('currentUser');
+  if (confirm('Do you want to log out?')) {
+    localStorage.removeItem('user');
     window.location.href = 'index.html';
   }
 }
 
-// ------------------------------------------------------------------------------
 // Handle Login Form Submission
-// ------------------------------------------------------------------------------
-async function initLoginPage() {
-  const loginForm = document.getElementById('login-form');
-  if (!loginForm) return;
+async function handleLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
 
-  loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
 
-    const email = document.getElementById('login-email').value.trim();
-    const password = document.getElementById('login-password').value;
-    const submitBtn = loginForm.querySelector('button[type="submit"]');
-
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Signing In...';
-
-    try {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        showAlert('login-alert', 'Login successful! Redirecting...', true);
-        localStorage.setItem('currentUser', JSON.stringify(data.user));
-        setTimeout(() => {
-          window.location.href = 'index.html';
-        }, 1000);
-      } else {
-        showAlert('login-alert', data.message || 'Login failed. Please check credentials.', false);
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Sign In';
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      showAlert('login-alert', 'Server error. Please make sure server is running.', false);
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Sign In';
+    if (data.success) {
+      showAlert('login-alert', 'Login successful! Redirecting...', true);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 1000);
+    } else {
+      showAlert('login-alert', data.message || 'Invalid email or password.', false);
     }
-  });
+  } catch (err) {
+    showAlert('login-alert', 'Server error. Please ensure server is running.', false);
+  }
 }
 
-// ------------------------------------------------------------------------------
 // Handle Registration Form Submission
-// ------------------------------------------------------------------------------
-async function initRegisterPage() {
-  const registerForm = document.getElementById('register-form');
-  if (!registerForm) return;
+async function handleRegister(e) {
+  e.preventDefault();
+  const name = document.getElementById('reg-name').value.trim();
+  const rollNo = document.getElementById('reg-roll').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const confirmPass = document.getElementById('reg-confirm').value;
 
-  registerForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  if (password !== confirmPass) {
+    showAlert('register-alert', 'Passwords do not match!', false);
+    return;
+  }
 
-    const name = document.getElementById('reg-name').value.trim();
-    const rollNo = document.getElementById('reg-roll').value.trim();
-    const email = document.getElementById('reg-email').value.trim();
-    const phone = document.getElementById('reg-phone').value.trim();
-    const password = document.getElementById('reg-password').value;
-    const confirmPassword = document.getElementById('reg-confirm-password').value;
-    const submitBtn = registerForm.querySelector('button[type="submit"]');
+  if (password.length < 6) {
+    showAlert('register-alert', 'Password must be at least 6 characters.', false);
+    return;
+  }
 
-    if (password !== confirmPassword) {
-      showAlert('register-alert', 'Passwords do not match! Please check and retry.', false);
-      return;
+  try {
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, rollNo, email, phone, password })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showAlert('register-alert', 'Registration successful! Redirecting to login...', true);
+      setTimeout(() => {
+        window.location.href = 'login.html';
+      }, 1500);
+    } else {
+      showAlert('register-alert', data.message || 'Registration failed.', false);
     }
-
-    if (password.length < 6) {
-      showAlert('register-alert', 'Password must be at least 6 characters long.', false);
-      return;
-    }
-
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Creating Account...';
-
-    try {
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, rollNo, email, phone, password })
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        showAlert('register-alert', 'Account created! Redirecting to login...', true);
-        setTimeout(() => {
-          window.location.href = 'login.html';
-        }, 1500);
-      } else {
-        showAlert('register-alert', data.message || 'Registration failed.', false);
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Account';
-      }
-    } catch (error) {
-      console.error('Register error:', error);
-      showAlert('register-alert', 'Server connection error. Please try again.', false);
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Create Account';
-    }
-  });
+  } catch (err) {
+    showAlert('register-alert', 'Server error during registration.', false);
+  }
 }
 
-// ------------------------------------------------------------------------------
-// Utility: Escape HTML to prevent XSS in rendering
-// ------------------------------------------------------------------------------
-function escapeHtml(text) {
-  if (!text) return '';
-  return String(text)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-// Run on page load
-document.addEventListener('DOMContentLoaded', () => {
-  updateNavigationAuth();
-  initLoginPage();
-  initRegisterPage();
-});
+// Initialize navbar on page load
+document.addEventListener('DOMContentLoaded', updateNavbar);

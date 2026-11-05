@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register - Campus Lost and Found</title>
+  <title>Register - Campus Lost & Found</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -11,76 +11,72 @@
   <!-- Navigation Bar -->
   <nav class="navbar">
     <div class="container nav-container">
-      <a href="index.html" class="nav-brand">
-        🎓 Campus <span>Lost & Found</span>
-      </a>
+      <a href="index.html" class="nav-brand">Campus Lost &amp; Found</a>
       <ul class="nav-links">
         <li><a href="index.html">← Back to Home</a></li>
       </ul>
-      <div id="nav-auth" class="nav-auth"></div>
     </div>
   </nav>
 
-  <!-- Registration Card Section -->
-  <div class="auth-page">
-    <div class="auth-card" style="max-width: 480px;">
-      <div class="auth-header">
-        <div class="logo">📝</div>
-        <h2>Create Account</h2>
-        <p>Register as a student to track and report campus items</p>
-      </div>
+  <!-- Registration Form Box -->
+  <main class="container" style="margin-top: 30px; margin-bottom: 30px;">
+    <div class="form-box" style="max-width: 480px;">
+      <h2>Student Registration</h2>
+      <p class="subtitle">Create an account to track and report campus items.</p>
 
-      <!-- Alert Box -->
       <div id="register-alert" class="alert"></div>
 
-      <!-- Registration Form -->
-      <form id="register-form">
-        <div class="form-group" style="margin-bottom: 12px;">
-          <label for="reg-name">Full Name <span class="required">*</span></label>
+      <form id="register-form" onsubmit="handleRegister(event)">
+        <div class="form-group">
+          <label>Full Name *</label>
           <input type="text" id="reg-name" required placeholder="e.g. Meriin K Joseph">
         </div>
 
-        <div class="form-group" style="margin-bottom: 12px;">
-          <label for="reg-roll">Roll Number / Student ID <span class="required">*</span></label>
-          <input type="text" id="reg-roll" required placeholder="e.g. 26CSEL40">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Roll Number *</label>
+            <input type="text" id="reg-roll" required placeholder="e.g. 26CSEL40">
+          </div>
+
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" id="reg-phone" placeholder="e.g. 9876543210">
+          </div>
         </div>
 
-        <div class="form-group" style="margin-bottom: 12px;">
-          <label for="reg-email">College Email Address <span class="required">*</span></label>
+        <div class="form-group">
+          <label>College Email *</label>
           <input type="email" id="reg-email" required placeholder="e.g. student@campus.edu">
         </div>
 
-        <div class="form-group" style="margin-bottom: 12px;">
-          <label for="reg-phone">Phone Number (Optional)</label>
-          <input type="tel" id="reg-phone" placeholder="e.g. 9876543210">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Password *</label>
+            <input type="password" id="reg-password" required placeholder="Min 6 characters">
+          </div>
+
+          <div class="form-group">
+            <label>Confirm Password *</label>
+            <input type="password" id="reg-confirm" required placeholder="Re-enter password">
+          </div>
         </div>
 
-        <div class="form-group" style="margin-bottom: 12px;">
-          <label for="reg-password">Create Password <span class="required">*</span></label>
-          <input type="password" id="reg-password" required placeholder="At least 6 characters">
-        </div>
-
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label for="reg-confirm-password">Confirm Password <span class="required">*</span></label>
-          <input type="password" id="reg-confirm-password" required placeholder="Re-enter password">
-        </div>
-
-        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
-          Create Account
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+          Register
         </button>
       </form>
 
-      <div class="auth-footer">
-        <p>Already have an account? <a href="login.html">Sign in here</a></p>
-      </div>
+      <p style="text-align: center; margin-top: 15px; font-size: 0.9rem;">
+        Already registered? <a href="login.html" style="color: #3498db; font-weight: bold;">Login here</a>
+      </p>
     </div>
-  </div>
+  </main>
 
   <!-- Footer -->
   <footer>
     <div class="container">
-      <p>Campus Lost &amp; Found System • Mini Project</p>
-      <p style="font-size: 0.8rem; color: #64748b;">merin@2026</p>
+      <p>Campus Lost &amp; Found System • Student Mini Project</p>
+      <p style="color: #7f8c8d; font-size: 0.8rem; margin-top: 4px;">merin@2026</p>
     </div>
   </footer>
 

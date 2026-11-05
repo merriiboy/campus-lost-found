@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - Campus Lost and Found</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="nav-brand">
+        🎓 Campus <span>Lost & Found</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">← Back to Home</a></li>
+      </ul>
+      <div id="nav-auth" class="nav-auth"></div>
+    </div>
+  </nav>
+
+  <!-- Registration Card Section -->
+  <div class="auth-page">
+    <div class="auth-card" style="max-width: 480px;">
+      <div class="auth-header">
+        <div class="logo">📝</div>
+        <h2>Create Account</h2>
+        <p>Register as a student to track and report campus items</p>
+      </div>
+
+      <!-- Alert Box -->
+      <div id="register-alert" class="alert"></div>
+
+      <!-- Registration Form -->
+      <form id="register-form">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="reg-name">Full Name <span class="required">*</span></label>
+          <input type="text" id="reg-name" required placeholder="e.g. Meriin K Joseph">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="reg-roll">Roll Number / Student ID <span class="required">*</span></label>
+          <input type="text" id="reg-roll" required placeholder="e.g. 26CSEL40">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="reg-email">College Email Address <span class="required">*</span></label>
+          <input type="email" id="reg-email" required placeholder="e.g. student@campus.edu">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="reg-phone">Phone Number (Optional)</label>
+          <input type="tel" id="reg-phone" placeholder="e.g. 9876543210">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="reg-password">Create Password <span class="required">*</span></label>
+          <input type="password" id="reg-password" required placeholder="At least 6 characters">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label for="reg-confirm-password">Confirm Password <span class="required">*</span></label>
+          <input type="password" id="reg-confirm-password" required placeholder="Re-enter password">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+          Create Account
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <p>Already have an account? <a href="login.html">Sign in here</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>Campus Lost &amp; Found System • Mini Project</p>
+      <p style="font-size: 0.8rem; color: #64748b;">merin@2026</p>
+    </div>
+  </footer>
+
+  <script src="js/auth.js"></script>
+</body>
+</html>

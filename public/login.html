@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Campus Lost and Found</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="nav-brand">
+        🎓 Campus <span>Lost & Found</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html">← Back to Home</a></li>
+      </ul>
+      <div id="nav-auth" class="nav-auth"></div>
+    </div>
+  </nav>
+
+  <!-- Login Card Section -->
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="logo">🔐</div>
+        <h2>Welcome Back</h2>
+        <p>Sign in to report or claim lost belongings</p>
+      </div>
+
+      <!-- Alert Box -->
+      <div id="login-alert" class="alert"></div>
+
+      <!-- Login Form -->
+      <form id="login-form">
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label for="login-email">Email Address <span class="required">*</span></label>
+          <input type="email" id="login-email" required placeholder="e.g. student@campus.edu">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label for="login-password">Password <span class="required">*</span></label>
+          <input type="password" id="login-password" required placeholder="••••••••">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+          Sign In
+        </button>
+      </form>
+
+      <!-- Examiner / Demo Credentials Hint -->
+      <div class="demo-credentials">
+        <strong>Demo Admin Credentials:</strong><br>
+        Email: <code>admin@campus.edu</code><br>
+        Password: <code>admin@12345</code>
+      </div>
+
+      <div class="auth-footer">
+        <p>Don't have an account yet? <a href="register.html">Register here</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>Campus Lost &amp; Found System • Mini Project</p>
+      <p style="font-size: 0.8rem; color: #64748b;">merin@2026</p>
+    </div>
+  </footer>
+
+  <script src="js/auth.js"></script>
+</body>
+</html>

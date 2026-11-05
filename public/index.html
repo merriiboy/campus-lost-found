@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Lost & Found System</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- 1. Navigation Bar -->
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="nav-brand">
+        🎓 Campus <span>Lost & Found</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#" class="tab-btn active" data-tab="browse">📋 All Items</a></li>
+        <li><a href="#" class="tab-btn" data-tab="report-lost">🔍 Report Lost</a></li>
+        <li><a href="#" class="tab-btn" data-tab="report-found">📦 Report Found</a></li>
+      </ul>
+
+      <div id="nav-auth" class="nav-auth">
+        <!-- Injected dynamically by auth.js -->
+        <a href="login.html" class="btn btn-outline btn-sm">Login</a>
+        <a href="register.html" class="btn btn-primary btn-sm">Register</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 2. Hero Section -->
+  <header class="hero">
+    <div class="container">
+      <h1>Campus Lost &amp; Found Portal</h1>
+      <p>A simple and transparent system to help students, faculty, and campus staff report lost items and return found belongings quickly.</p>
+      <div class="hero-actions">
+        <button class="btn btn-danger btn-lg tab-btn" data-tab="report-lost">
+          🔍 Report Lost Item
+        </button>
+        <button class="btn btn-success btn-lg tab-btn" data-tab="report-found">
+          📦 Report Found Item
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 3. Main Container -->
+  <main class="container" style="margin-top: 10px; margin-bottom: 50px;">
+
+    <!-- Live Statistics Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon lost">🔍</div>
+        <div class="stat-info">
+          <h3 id="stat-lost">0</h3>
+          <p>Active Lost Items</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon found">📦</div>
+        <div class="stat-info">
+          <h3 id="stat-found">0</h3>
+          <p>Active Found Items</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon returned">✅</div>
+        <div class="stat-info">
+          <h3 id="stat-returned">0</h3>
+          <p>Returned to Owners</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs Navigation Bar -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" data-tab="browse">📋 Browse Items</button>
+      <button class="tab-btn" data-tab="report-lost">🔍 Report Lost Item</button>
+      <button class="tab-btn" data-tab="report-found">📦 Report Found Item</button>
+    </div>
+
+    <!-- TAB 1: BROWSE ITEMS -->
+    <section id="tab-browse" class="tab-content active">
+      <!-- Search & Filter Controls -->
+      <div class="filter-bar">
+        <div class="search-box">
+          <input type="text" id="search-input" placeholder="🔍 Search items by name, location, or keyword…">
+        </div>
+
+        <div class="filter-selects">
+          <select id="filter-type">
+            <option value="All">All Items</option>
+            <option value="Lost">Lost Only</option>
+            <option value="Found">Found Only</option>
+            <option value="Returned">Returned History</option>
+          </select>
+
+          <select id="filter-category">
+            <option value="All">All Categories</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Books & Stationery">Books &amp; Stationery</option>
+            <option value="ID & Cards">ID &amp; Cards</option>
+            <option value="Wallets & Bags">Wallets &amp; Bags</option>
+            <option value="Keys">Keys</option>
+            <option value="Clothing">Clothing</option>
+            <option value="Accessories">Accessories</option>
+            <option value="Others">Others</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Items Grid -->
+      <div id="items-grid" class="items-grid">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </section>
+
+    <!-- TAB 2: REPORT LOST ITEM FORM -->
+    <section id="tab-report-lost" class="tab-content">
+      <div class="form-card">
+        <div class="form-header">
+          <h2>🔍 Report a Lost Item</h2>
+          <p>Provide details of the item you lost so the finder or campus desk can identify it.</p>
+        </div>
+
+        <div id="lost-form-alert" class="alert"></div>
+
+        <form id="form-report-lost">
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="lost-title">Item Name <span class="required">*</span></label>
+              <input type="text" id="lost-title" required placeholder="e.g. Blue Spiral Notebook, Casio Calculator">
+            </div>
+
+            <div class="form-group">
+              <label for="lost-category">Category <span class="required">*</span></label>
+              <select id="lost-category" required>
+                <option value="Electronics">Electronics</option>
+                <option value="Books & Stationery" selected>Books &amp; Stationery</option>
+                <option value="ID & Cards">ID &amp; Cards</option>
+                <option value="Wallets & Bags">Wallets &amp; Bags</option>
+                <option value="Keys">Keys</option>
+                <option value="Clothing">Clothing</option>
+                <option value="Accessories">Accessories</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="lost-date">Date Lost <span class="required">*</span></label>
+              <input type="date" id="lost-date" required>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="lost-location">Location Lost <span class="required">*</span></label>
+              <input type="text" id="lost-location" required placeholder="e.g. Science Block Room 204, Library 2nd Floor">
+            </div>
+
+            <div class="form-group full-width">
+              <label for="lost-description">Detailed Description <span class="required">*</span></label>
+              <textarea id="lost-description" required placeholder="Describe identifiable marks, brand, color, contents, etc."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="lost-reporter-name">Your Full Name <span class="required">*</span></label>
+              <input type="text" id="lost-reporter-name" required placeholder="e.g. Meriin K Joseph">
+            </div>
+
+            <div class="form-group">
+              <label for="lost-reporter-roll">Roll Number / Student ID <span class="required">*</span></label>
+              <input type="text" id="lost-reporter-roll" required placeholder="e.g. 26CSEL40">
+            </div>
+
+            <div class="form-group">
+              <label for="lost-reporter-phone">Phone Number <span class="required">*</span></label>
+              <input type="tel" id="lost-reporter-phone" required placeholder="e.g. 9876543210">
+            </div>
+
+            <div class="form-group">
+              <label for="lost-reporter-email">Email Address <span class="required">*</span></label>
+              <input type="email" id="lost-reporter-email" required placeholder="e.g. student@campus.edu">
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary tab-btn" data-tab="browse">Cancel</button>
+            <button type="submit" class="btn btn-danger">Submit Lost Item Report</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 3: REPORT FOUND ITEM FORM -->
+    <section id="tab-report-found" class="tab-content">
+      <div class="form-card">
+        <div class="form-header">
+          <h2>📦 Report a Found Item</h2>
+          <p>Thank you for your honesty! Record what you found so the rightful owner can retrieve it.</p>
+        </div>
+
+        <div id="found-form-alert" class="alert"></div>
+
+        <form id="form-report-found">
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="found-title">Item Name <span class="required">*</span></label>
+              <input type="text" id="found-title" required placeholder="e.g. HP Laptop Charger, Red Water Bottle">
+            </div>
+
+            <div class="form-group">
+              <label for="found-category">Category <span class="required">*</span></label>
+              <select id="found-category" required>
+                <option value="Electronics" selected>Electronics</option>
+                <option value="Books & Stationery">Books &amp; Stationery</option>
+                <option value="ID & Cards">ID &amp; Cards</option>
+                <option value="Wallets & Bags">Wallets &amp; Bags</option>
+                <option value="Keys">Keys</option>
+                <option value="Clothing">Clothing</option>
+                <option value="Accessories">Accessories</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="found-date">Date Found <span class="required">*</span></label>
+              <input type="date" id="found-date" required>
+            </div>
+
+            <div class="form-group">
+              <label for="found-location">Where Found? <span class="required">*</span></label>
+              <input type="text" id="found-location" required placeholder="e.g. Cafeteria Table #4, Basketball Court">
+            </div>
+
+            <div class="form-group">
+              <label for="found-collect-from">Where can the owner collect it? <span class="required">*</span></label>
+              <input type="text" id="found-collect-from" required placeholder="e.g. Main Security Desk, Admin Office">
+            </div>
+
+            <div class="form-group full-width">
+              <label for="found-description">Description <span class="required">*</span></label>
+              <textarea id="found-description" required placeholder="Brief description of the item found."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="found-reporter-name">Finder's Name <span class="required">*</span></label>
+              <input type="text" id="found-reporter-name" required placeholder="Your full name">
+            </div>
+
+            <div class="form-group">
+              <label for="found-reporter-phone">Finder's Phone</label>
+              <input type="tel" id="found-reporter-phone" placeholder="Optional contact phone">
+            </div>
+
+            <div class="form-group full-width">
+              <label for="found-reporter-email">Finder's Email</label>
+              <input type="email" id="found-reporter-email" placeholder="Optional contact email">
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary tab-btn" data-tab="browse">Cancel</button>
+            <button type="submit" class="btn btn-success">Submit Found Item Report</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 4. Handover / Mark as Returned Modal Dialog -->
+  <div id="return-modal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>✔ Handover Confirmation</h3>
+        <button class="modal-close" onclick="closeReturnModal()">&times;</button>
+      </div>
+
+      <form id="form-confirm-return">
+        <div class="modal-body">
+          <p style="font-size: 0.9rem; color: #475569; margin-bottom: 14px;">
+            Item: <strong id="modal-item-name" style="color: #0f172a;"></strong>
+          </p>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="modal-recipient-name">Collected By (Student Name) <span class="required">*</span></label>
+            <input type="text" id="modal-recipient-name" required placeholder="Enter student's full name">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="modal-recipient-roll">Student Roll Number</label>
+            <input type="text" id="modal-recipient-roll" placeholder="e.g. 26CSEL40">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="modal-return-date">Return Date <span class="required">*</span></label>
+            <input type="date" id="modal-return-date" required>
+          </div>
+
+          <div class="form-group">
+            <label for="modal-remarks">Verification Remarks / Notes</label>
+            <input type="text" id="modal-remarks" placeholder="e.g. Verified college ID card at Help Desk">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeReturnModal()">Cancel</button>
+          <button type="submit" id="btn-confirm-return" class="btn btn-success">Confirm &amp; Mark as Returned</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. Footer -->
+  <footer>
+    <div class="container">
+      <p>Campus Lost &amp; Found System • Mini Project</p>
+      <p style="font-size: 0.8rem; color: #64748b;">merin@2026</p>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

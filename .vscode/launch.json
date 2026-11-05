@@ -2,28 +2,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "🚀 Run All (MongoDB + Backend + Frontend)",
+      "name": "Start Campus Lost and Found Server",
       "type": "node",
       "request": "launch",
-      "program": "${workspaceFolder}/run-all.js",
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen"
-    },
-    {
-      "name": "⚡ Run Frontend Only",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "console": "integratedTerminal"
-    },
-    {
-      "name": "⚙️ Run Backend Only",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "cwd": "${workspaceFolder}/backend",
+      "program": "${workspaceFolder}/server.js",
       "console": "integratedTerminal"
     }
   ]

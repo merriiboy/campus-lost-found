@@ -12,7 +12,7 @@ Unlike complicated modern frameworks that generate thousands of lines of machine
 1. **Frontend**: Pure **HTML5**, standard **CSS3** (no Tailwind, no Bootstrap), and **Vanilla JavaScript** (no React, no TypeScript, no build tools).
 2. **Backend**: Lightweight **Node.js** with **Express.js** handling RESTful API routes.
 3. **Database**: **MongoDB Atlas** (Cloud Database) with an automatic fallback to local MongoDB.
-4. **Single Server**: The entire project runs on a single standard port: **`http://localhost:3000`**.
+4. **Single Server**: The entire project runs on a single standard port: **`http://localhost:3001`**.
 
 ---
 
@@ -104,7 +104,7 @@ node server.js
 ### 🌐 Open in Browser
 Visit:
 ```
-http://localhost:3000
+http://localhost:3001
 ```
 
 ---

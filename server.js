@@ -17,7 +17,7 @@ const Item = require('./models/Item');
 
 // Initialize Express Application
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Prevent server crash from unexpected errors
 process.on('uncaughtException', (err) => {

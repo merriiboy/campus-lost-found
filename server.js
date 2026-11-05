@@ -19,6 +19,14 @@ const Item = require('./models/Item');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Prevent server crash from unexpected errors
+process.on('uncaughtException', (err) => {
+  console.error('Server Uncaught Exception:', err.message);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('Server Unhandled Rejection:', reason);
+});
+
 // ------------------------------------------------------------------------------
 // Middleware Configuration
 // ------------------------------------------------------------------------------

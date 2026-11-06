@@ -1,25 +1,12 @@
 {
   "name": "campus-lost-and-found",
   "version": "1.0.0",
-  "description": "Campus Lost and Found System - Mini Project built with HTML, CSS, JavaScript, Node.js, Express, and MongoDB",
+  "description": "Campus Lost and Found Management System",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "keywords": [
-    "campus-lost-and-found",
-    "mini-project",
-    "nodejs",
-    "express",
-    "mongodb"
-  ],
-  "author": "Merin",
-  "license": "ISC",
   "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "mongoose": "^7.5.0"
+    "mongodb": "^6.12.0"
   }
 }

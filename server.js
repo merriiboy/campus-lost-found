@@ -1,448 +1,628 @@
 // ==============================================================================
-// CAMPUS LOST AND FOUND SYSTEM - MINI PROJECT
-// Main Server File (Node.js & Express)
-// Running on: http://localhost:3000
+// Campus Lost and Found Management System
+// This server uses basic Node.js HTTP and MongoDB methods from the class notes.
+// Author: Merin (merin@2026)
 // ==============================================================================
 
-require('dotenv').config();
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const path = require('path');
-const bcrypt = require('bcryptjs');
+const http = require("http");
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
+const { MongoClient, ObjectId } = require("mongodb");
 
-// Import Mongoose Models
-const User = require('./models/User');
-const Item = require('./models/Item');
+// MongoDB Connection String (Atlas Cloud / Local Fallback)
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://merinkarukappallil_db_user:b8QVf72pLW7Vhs1N@cluster0.nyyxbcy.mongodb.net/campusLostFoundDB?retryWrites=true&w=majority";
+const LOCAL_MONGODB_URI = "mongodb://127.0.0.1:27017/campusLostFoundDB";
 
-// Initialize Express Application
-const app = express();
-const PORT = process.env.PORT || 3001;
+let client = new MongoClient(MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
+let users;
+let items;
 
-// Prevent server crash from unexpected errors
-process.on('uncaughtException', (err) => {
-  console.error('Server Uncaught Exception:', err.message);
-});
-process.on('unhandledRejection', (reason) => {
-  console.error('Server Unhandled Rejection:', reason);
-});
+// A simple in-memory list of logged-in user sessions.
+const sessions = new Map();
 
-// ------------------------------------------------------------------------------
-// Middleware Configuration
-// ------------------------------------------------------------------------------
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Serve static frontend files (HTML, CSS, JS) from the "public" directory
-app.use(express.static(path.join(__dirname, 'public')));
-
-// ------------------------------------------------------------------------------
-// Database Connection (MongoDB Atlas Cloud / Local Fallback)
-// ------------------------------------------------------------------------------
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/campus-lost-found';
-const LOCAL_MONGODB_URI = process.env.LOCAL_MONGODB_URI || 'mongodb://localhost:27017/campus-lost-found';
-
-async function connectToDatabase() {
-  try {
-    console.log('Connecting to MongoDB Database...');
-    await mongoose.connect(MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000
-    });
-    console.log('✔ Connected to MongoDB successfully!');
-    await seedInitialData();
-  } catch (error) {
-    console.warn('⚠️ Cloud MongoDB connection failed or timed out:', error.message);
-    console.log('Trying local MongoDB fallback (' + LOCAL_MONGODB_URI + ')...');
-    try {
-      await mongoose.connect(LOCAL_MONGODB_URI, { serverSelectionTimeoutMS: 3000 });
-      console.log('✔ Connected to local MongoDB successfully!');
-      await seedInitialData();
-    } catch (localError) {
-      console.error('❌ Could not connect to local MongoDB either:', localError.message);
-      console.log('Server will continue running. Check your internet or MongoDB service.');
-    }
-  }
+// Convert special characters before displaying database text in HTML.
+function safeText(value) {
+    return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 }
 
-// ------------------------------------------------------------------------------
-// Initial Data Seeder (Default Admin & Starter Items)
-// ------------------------------------------------------------------------------
-async function seedInitialData() {
-  try {
-    // 1. Ensure default Admin user exists
-    const adminExists = await User.findOne({ email: 'admin@campus.edu' });
-    if (!adminExists) {
-      const hashedPassword = await bcrypt.hash('admin@12345', 10);
-      await User.create({
-        name: 'Administrator',
-        email: 'admin@campus.edu',
-        rollNo: 'ADMIN001',
-        phone: '9876543210',
-        password: hashedPassword,
-        role: 'admin'
-      });
-      console.log('✔ Created default Admin user (admin@campus.edu / admin@12345)');
-    }
+// Read the form values sent by the browser.
+function readFormData(req) {
+    return new Promise(function (resolve) {
+        let body = "";
+        req.on("data", function (chunk) {
+            body = body + chunk.toString();
+        });
+        req.on("end", function () {
+            resolve(new URLSearchParams(body));
+        });
+    });
+}
 
-    // 2. Ensure initial items exist for demonstration if database is empty
-    const itemsCount = await Item.countDocuments();
-    if (itemsCount === 0) {
-      const sampleItems = [
-        {
-          type: 'Lost',
-          title: 'Blue Spiral Notebook',
-          category: 'Books & Stationery',
-          description: 'Class notes for Data Structures with blue cover.',
-          date: '2026-11-01',
-          location: 'Main Science Block, Room 204',
-          collectFrom: 'Admin Office',
-          reporterName: 'Meriin K Joseph',
-          reporterRoll: '26CSEL40',
-          reporterPhone: '9876543210',
-          reporterEmail: 'merin@campus.edu',
-          status: 'Active'
-        },
-        {
-          type: 'Found',
-          title: 'Casio Scientific Calculator (fx-991EX)',
-          category: 'Electronics',
-          description: 'Black calculator found on the front desk.',
-          date: '2026-11-02',
-          location: 'Central Library, 1st Floor',
-          collectFrom: 'Library Reception Counter',
-          reporterName: 'Library Staff',
-          reporterRoll: 'STAFF102',
-          reporterPhone: '9123456780',
-          reporterEmail: 'library@campus.edu',
-          status: 'Active'
-        },
-        {
-          type: 'Lost',
-          title: 'Student Identity Card',
-          category: 'ID & Cards',
-          description: 'College ID card in a blue lanyard.',
-          date: '2026-10-30',
-          location: 'Campus Cafeteria',
-          collectFrom: 'Security Desk',
-          reporterName: 'Rahul Sharma',
-          reporterRoll: '24BCS015',
-          reporterPhone: '9876501234',
-          reporterEmail: 'rahul.s@campus.edu',
-          status: 'Returned',
-          returnedToName: 'Rahul Sharma',
-          returnedToRoll: '24BCS015',
-          returnedDate: '2026-11-03',
-          remarks: 'Verified ID photo at Help Desk.'
+// Send an HTML, CSS or JavaScript file to the browser.
+function sendFile(res, fileName, contentType) {
+    const filePath = path.join(__dirname, "public", fileName);
+    fs.readFile(filePath, function (error, data) {
+        if (error) {
+            res.writeHead(404, { "Content-Type": "text/plain" });
+            return res.end("File not found");
         }
-      ];
-
-      await Item.insertMany(sampleItems);
-      console.log('✔ Seeded starter sample items for demonstration!');
-    }
-  } catch (err) {
-    console.error('Data seeding note:', err.message);
-  }
+        res.writeHead(200, { "Content-Type": contentType });
+        res.end(data);
+    });
 }
 
-// ------------------------------------------------------------------------------
-// AUTHENTICATION ROUTES
-// ------------------------------------------------------------------------------
+// Show a simple message page.
+function showMessage(res, message, link, linkText) {
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    res.end(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Campus Lost & Found</title>
+            <link rel="stylesheet" href="/style.css">
+        </head>
+        <body>
+            <header>
+                <h1>Campus Lost and Found System</h1>
+            </header>
+            <div class="form-box">
+                <h2>${safeText(message)}</h2>
+                <p><a href="${link}">${linkText}</a></p>
+            </div>
+            <footer>
+                <p>Campus Lost and Found System • merin@2026</p>
+            </footer>
+        </body>
+        </html>
+    `);
+}
 
-// 1. User Registration Route
-app.post('/api/register', async (req, res) => {
-  try {
-    const { name, email, rollNo, phone, password } = req.body;
-
-    // Validation
-    if (!name || !email || !rollNo || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Name, email, roll number, and password are required.'
-      });
+// Find the logged-in user using the session cookie.
+function getLoggedInUser(req) {
+    const cookie = req.headers.cookie || "";
+    const parts = cookie.split(";");
+    for (let i = 0; i < parts.length; i++) {
+        const item = parts[i].trim();
+        if (item.startsWith("studentSession=")) {
+            const sessionId = item.substring("studentSession=".length);
+            return sessions.get(sessionId);
+        }
     }
+    return null;
+}
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: 'An account with this email already exists. Please log in.'
-      });
-    }
+// Create a simple password hash using Node.js built-in crypto.
+function makePasswordHash(password, salt) {
+    return crypto.scryptSync(password, salt, 64).toString("hex");
+}
 
-    // Hash the password with bcrypt for security
-    const hashedPassword = await bcrypt.hash(password, 10);
+// Render the dashboard HTML with Lost and Found items.
+async function showDashboard(res, user, filterType = "All", searchKeyword = "") {
+    const student = await users.findOne({ email: user.email }) || { name: "User", email: user.email, rollNo: "", phone: "" };
 
-    // Create new user record
-    const newUser = await User.create({
-      name: name.trim(),
-      email: email.toLowerCase().trim(),
-      rollNo: rollNo.trim(),
-      phone: phone ? phone.trim() : '',
-      password: hashedPassword,
-      role: 'student'
-    });
+    // Fetch counts for summary boxes
+    const totalLost = await items.countDocuments({ type: "Lost", status: "Active" });
+    const totalFound = await items.countDocuments({ type: "Found", status: "Active" });
+    const totalReturned = await items.countDocuments({ status: "Returned" });
 
-    res.status(201).json({
-      success: true,
-      message: 'Account registered successfully! You can now log in.',
-      user: {
-        id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-        rollNo: newUser.rollNo,
-        role: newUser.role
-      }
-    });
-  } catch (error) {
-    console.error('Registration Error:', error);
-    res.status(500).json({ success: false, message: 'Server error during registration.' });
-  }
-});
-
-// 2. User Login Route
-app.post('/api/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email and password are required.'
-      });
-    }
-
-    // Find user by email
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid email address or user not found.'
-      });
-    }
-
-    // Compare passwords
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: 'Incorrect password. Please try again.'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Login successful!',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        rollNo: user.rollNo,
-        phone: user.phone,
-        role: user.role
-      }
-    });
-  } catch (error) {
-    console.error('Login Error:', error);
-    res.status(500).json({ success: false, message: 'Server error during login.' });
-  }
-});
-
-// ------------------------------------------------------------------------------
-// ITEM ROUTES (LOST & FOUND)
-// ------------------------------------------------------------------------------
-
-// 3. Statistics Route - Live item counts
-app.get('/api/stats', async (req, res) => {
-  try {
-    const totalLost = await Item.countDocuments({ type: 'Lost', status: 'Active' });
-    const totalFound = await Item.countDocuments({ type: 'Found', status: 'Active' });
-    const totalReturned = await Item.countDocuments({ status: 'Returned' });
-
-    res.json({
-      success: true,
-      stats: {
-        totalLost,
-        totalFound,
-        totalReturned,
-        totalAll: totalLost + totalFound + totalReturned
-      }
-    });
-  } catch (error) {
-    console.error('Stats Error:', error);
-    res.status(500).json({ success: false, message: 'Failed to retrieve stats.' });
-  }
-});
-
-// 4. Get All Items with Filtering & Search
-app.get('/api/items', async (req, res) => {
-  try {
-    const { type, status, category, search } = req.query;
-
+    // Build query filter
     const query = {};
-
-    // Filter by type ('Lost' or 'Found')
-    if (type && type !== 'All') {
-      query.type = type;
+    if (filterType === "Lost" || filterType === "Found") {
+        query.type = filterType;
+        query.status = "Active";
+    } else if (filterType === "Returned") {
+        query.status = "Returned";
     }
 
-    // Filter by status ('Active' or 'Returned')
-    if (status && status !== 'All') {
-      query.status = status;
+    if (searchKeyword && searchKeyword.trim() !== "") {
+        const keyword = searchKeyword.trim();
+        query.$or = [
+            { title: { $regex: keyword, $options: "i" } },
+            { location: { $regex: keyword, $options: "i" } },
+            { description: { $regex: keyword, $options: "i" } }
+        ];
     }
 
-    // Filter by category
-    if (category && category !== 'All') {
-      query.category = category;
+    const allItems = await items.find(query).sort({ _id: -1 }).toArray();
+
+    let itemRows = "";
+    for (let i = 0; i < allItems.length; i++) {
+        const item = allItems[i];
+        const isReturned = item.status === "Returned";
+        const badgeClass = isReturned ? "badge-returned" : (item.type === "Lost" ? "badge-lost" : "badge-found");
+        const badgeLabel = isReturned ? "RETURNED" : (item.type === "Lost" ? "LOST" : "FOUND");
+
+        let actionCell = "";
+        if (!isReturned) {
+            actionCell = `
+                <form action="/item/return" method="POST" style="display:inline-block; margin-bottom:5px;">
+                    <input type="hidden" name="id" value="${item._id}">
+                    <input name="returnedTo" placeholder="Collected by (Name)" required style="width:140px; padding:6px; font-size:12px;">
+                    <button type="submit" style="padding:6px 10px; font-size:12px; background-color:#27ae60;">Mark Returned</button>
+                </form>
+            `;
+        } else {
+            actionCell = `<span style="color:#27ae60; font-weight:bold; font-size:13px;">✓ Returned to ${safeText(item.returnedTo)}</span><br>`;
+        }
+
+        actionCell += `
+            <form action="/item/delete" method="POST" style="display:inline-block; margin-top:4px;">
+                <input type="hidden" name="id" value="${item._id}">
+                <button type="submit" style="padding:5px 10px; font-size:12px; background-color:#c0392b;">Delete</button>
+            </form>
+        `;
+
+        itemRows += `
+            <tr>
+                <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
+                <td><b>${safeText(item.title)}</b><br><small style="color:#666;">${safeText(item.category)}</small></td>
+                <td>${safeText(item.date)}<br><small style="color:#666;">${safeText(item.location)}</small></td>
+                <td>${safeText(item.description)} ${item.collectFrom ? `<br><small><b>Collect From:</b> ${safeText(item.collectFrom)}</small>` : ""}</td>
+                <td>${safeText(item.reporterName)}<br><small>${safeText(item.reporterRoll || "")} ${item.contactPhone ? `• ${safeText(item.contactPhone)}` : ""}</small></td>
+                <td>${actionCell}</td>
+            </tr>
+        `;
     }
 
-    // Search query (matches title, location, or reporter)
-    if (search && search.trim() !== '') {
-      const regex = new RegExp(search.trim(), 'i');
-      query.$or = [
-        { title: regex },
-        { location: regex },
-        { description: regex },
-        { reporterName: regex }
-      ];
+    if (itemRows === "") {
+        itemRows = `<tr><td colspan="6" style="text-align:center; padding:20px; color:#666;">No items found matching the selected filter.</td></tr>`;
     }
 
-    // Sort newest first
-    const items = await Item.find(query).sort({ createdAt: -1 });
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    res.end(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Campus Lost & Found - Dashboard</title>
+            <link rel="stylesheet" href="/style.css">
+            <script src="/script.js" defer></script>
+        </head>
+        <body>
+            <header>
+                <h1>Campus Lost and Found System</h1>
+                <p>Welcome, ${safeText(student.name)} ${student.rollNo ? `(${safeText(student.rollNo)})` : ""}</p>
+                <p class="no-print"><a href="/logout" style="color:white; font-weight:bold;">Logout</a></p>
+            </header>
 
-    res.json({
-      success: true,
-      count: items.length,
-      items
-    });
-  } catch (error) {
-    console.error('Fetch Items Error:', error);
-    res.status(500).json({ success: false, message: 'Failed to fetch items.' });
-  }
+            <!-- Action Row -->
+            <div class="section-box no-print" style="margin-bottom:0;">
+                <div class="button-row">
+                    <button onclick="printReport()">Print Report / Save as PDF</button>
+                </div>
+            </div>
+
+            <!-- Statistics Summary Section -->
+            <div class="section-box">
+                <h2>Campus Status Summary</h2>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <h3 style="color:#d9534f;">${totalLost}</h3>
+                        <p>Active Lost Items</p>
+                    </div>
+                    <div class="stat-item">
+                        <h3 style="color:#0275d8;">${totalFound}</h3>
+                        <p>Active Found Items</p>
+                    </div>
+                    <div class="stat-item">
+                        <h3 style="color:#5cb85c;">${totalReturned}</h3>
+                        <p>Returned to Owners</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report an Item Form -->
+            <div class="section-box no-print">
+                <h2>Report a Lost or Found Item</h2>
+                <form action="/item/add" method="POST">
+                    <label>Report Type</label>
+                    <select name="type" required>
+                        <option value="Lost">Lost Item (I lost something)</option>
+                        <option value="Found">Found Item (I found something)</option>
+                    </select>
+
+                    <label>Item Name</label>
+                    <input name="title" required placeholder="e.g. Scientific Calculator fx-991, Blue Notebook">
+
+                    <label>Category</label>
+                    <select name="category" required>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Books & Stationery" selected>Books &amp; Stationery</option>
+                        <option value="ID & Cards">ID &amp; Cards</option>
+                        <option value="Wallets & Bags">Wallets &amp; Bags</option>
+                        <option value="Keys">Keys</option>
+                        <option value="Others">Others</option>
+                    </select>
+
+                    <label>Date Lost or Found</label>
+                    <input type="date" name="date" required value="${new Date().toISOString().split("T")[0]}">
+
+                    <label>Location on Campus</label>
+                    <input name="location" required placeholder="e.g. Science Block Room 204, Library 1st Floor">
+
+                    <label>Where can the owner collect it? (For Found Items)</label>
+                    <input name="collectFrom" placeholder="e.g. Security Desk, Dept Office, Library Counter">
+
+                    <label>Description</label>
+                    <textarea name="description" placeholder="Color, brand, distinguishing marks..."></textarea>
+
+                    <label>Your Contact Phone</label>
+                    <input type="tel" name="contactPhone" value="${safeText(student.phone || "")}" placeholder="e.g. 9876543210">
+
+                    <button type="submit">Submit Item Report</button>
+                </form>
+            </div>
+
+            <!-- Items Table Section -->
+            <div class="section-box">
+                <h2>Campus Lost &amp; Found Feed</h2>
+
+                <!-- Search and Filter Controls -->
+                <form action="/dashboard" method="GET" class="filter-bar no-print">
+                    <select name="filter">
+                        <option value="All" ${filterType === "All" ? "selected" : ""}>All Items</option>
+                        <option value="Lost" ${filterType === "Lost" ? "selected" : ""}>Lost Only</option>
+                        <option value="Found" ${filterType === "Found" ? "selected" : ""}>Found Only</option>
+                        <option value="Returned" ${filterType === "Returned" ? "selected" : ""}>Returned Only</option>
+                    </select>
+
+                    <input type="text" name="search" value="${safeText(searchKeyword)}" placeholder="Search by name, location, or keyword...">
+
+                    <button type="submit">Filter</button>
+                    ${filterType !== "All" || searchKeyword !== "" ? `<a href="/dashboard" class="button-link" style="background-color:#95a5a6; padding:10px 14px;">Reset</a>` : ""}
+                </form>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Item Name</th>
+                            <th>Date &amp; Location</th>
+                            <th>Description</th>
+                            <th>Reported By</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemRows}
+                    </tbody>
+                </table>
+            </div>
+
+            <footer class="no-print">
+                <p>Campus Lost and Found System • Student Mini Project • merin@2026</p>
+            </footer>
+        </body>
+        </html>
+    `);
+}
+
+// Main HTTP Server
+const server = http.createServer(async function (req, res) {
+    try {
+        const pageUrl = new URL(req.url, "http://localhost:3000");
+        const user = getLoggedInUser(req);
+
+        // Serve Static Files
+        if (req.method === "GET" && pageUrl.pathname === "/") {
+            return sendFile(res, "index.html", "text/html");
+        }
+        if (req.method === "GET" && pageUrl.pathname === "/register.html") {
+            return sendFile(res, "register.html", "text/html");
+        }
+        if (req.method === "GET" && pageUrl.pathname === "/login.html") {
+            return sendFile(res, "login.html", "text/html");
+        }
+        if (req.method === "GET" && pageUrl.pathname === "/style.css") {
+            return sendFile(res, "style.css", "text/css");
+        }
+        if (req.method === "GET" && pageUrl.pathname === "/script.js") {
+            return sendFile(res, "script.js", "text/javascript");
+        }
+
+        // Register a new student
+        if (req.method === "POST" && pageUrl.pathname === "/register") {
+            const form = await readFormData(req);
+            const name = (form.get("name") || "").trim();
+            const rollNo = (form.get("rollNo") || "").trim();
+            const phone = (form.get("phone") || "").trim();
+            const email = (form.get("email") || "").trim().toLowerCase();
+            const password = form.get("password") || "";
+
+            if (name === "" || email === "" || password.length < 4) {
+                return showMessage(res, "Please enter valid details. Password must have at least 4 characters.", "/register.html", "Go back");
+            }
+
+            const oldUser = await users.findOne({ email: email });
+            if (oldUser) {
+                return showMessage(res, "This email is already registered.", "/login.html", "Go to Login");
+            }
+
+            const salt = crypto.randomBytes(16).toString("hex");
+            const passwordHash = makePasswordHash(password, salt);
+
+            await users.insertOne({
+                name: name,
+                rollNo: rollNo,
+                phone: phone,
+                email: email,
+                passwordHash: passwordHash,
+                salt: salt,
+                role: "student"
+            });
+
+            return showMessage(res, "Registration successful. You can now login.", "/login.html", "Login now");
+        }
+
+        // Login an existing student or admin
+        if (req.method === "POST" && pageUrl.pathname === "/login") {
+            const form = await readFormData(req);
+            const email = (form.get("email") || "").trim().toLowerCase();
+            const password = form.get("password") || "";
+
+            const student = await users.findOne({ email: email });
+            if (!student) {
+                return showMessage(res, "Invalid email or password.", "/login.html", "Try again");
+            }
+
+            const enteredHash = makePasswordHash(password, student.salt);
+            if (enteredHash !== student.passwordHash) {
+                return showMessage(res, "Invalid email or password.", "/login.html", "Try again");
+            }
+
+            const sessionId = crypto.randomBytes(16).toString("hex");
+            sessions.set(sessionId, { email: student.email });
+
+            res.writeHead(302, {
+                "Set-Cookie": "studentSession=" + sessionId + "; HttpOnly; SameSite=Lax; Path=/",
+                "Location": "/dashboard"
+            });
+            return res.end();
+        }
+
+        // Show the Dashboard after login
+        if (req.method === "GET" && pageUrl.pathname === "/dashboard") {
+            if (!user) {
+                res.writeHead(302, { Location: "/login.html" });
+                return res.end();
+            }
+            const filterType = pageUrl.searchParams.get("filter") || "All";
+            const searchKeyword = pageUrl.searchParams.get("search") || "";
+            return showDashboard(res, user, filterType, searchKeyword);
+        }
+
+        // Add a Lost or Found item
+        if (req.method === "POST" && pageUrl.pathname === "/item/add") {
+            if (!user) {
+                res.writeHead(302, { Location: "/login.html" });
+                return res.end();
+            }
+            const form = await readFormData(req);
+            const student = await users.findOne({ email: user.email }) || {};
+
+            const type = form.get("type") || "Lost";
+            const title = (form.get("title") || "").trim();
+            const category = form.get("category") || "Others";
+            const date = form.get("date") || new Date().toISOString().split("T")[0];
+            const location = (form.get("location") || "").trim();
+            const collectFrom = (form.get("collectFrom") || "").trim();
+            const description = (form.get("description") || "").trim();
+            const contactPhone = (form.get("contactPhone") || student.phone || "").trim();
+
+            if (title === "") {
+                return showMessage(res, "Item name is required.", "/dashboard", "Back to Dashboard");
+            }
+
+            await items.insertOne({
+                type: type,
+                title: title,
+                category: category,
+                date: date,
+                location: location,
+                collectFrom: collectFrom,
+                description: description,
+                reporterName: student.name || "Student",
+                reporterRoll: student.rollNo || "",
+                reporterEmail: user.email,
+                contactPhone: contactPhone,
+                status: "Active",
+                returnedTo: "",
+                returnedDate: ""
+            });
+
+            res.writeHead(302, { Location: "/dashboard" });
+            return res.end();
+        }
+
+        // Mark an item as Returned
+        if (req.method === "POST" && pageUrl.pathname === "/item/return") {
+            if (!user) {
+                res.writeHead(302, { Location: "/login.html" });
+                return res.end();
+            }
+            const form = await readFormData(req);
+            const id = form.get("id");
+            const returnedTo = (form.get("returnedTo") || "").trim();
+            const today = new Date().toISOString().split("T")[0];
+
+            if (ObjectId.isValid(id) && returnedTo !== "") {
+                await items.updateOne(
+                    { _id: new ObjectId(id) },
+                    {
+                        $set: {
+                            status: "Returned",
+                            returnedTo: returnedTo,
+                            returnedDate: today
+                        }
+                    }
+                );
+            }
+
+            res.writeHead(302, { Location: "/dashboard" });
+            return res.end();
+        }
+
+        // Delete an item
+        if (req.method === "POST" && pageUrl.pathname === "/item/delete") {
+            if (!user) {
+                res.writeHead(302, { Location: "/login.html" });
+                return res.end();
+            }
+            const form = await readFormData(req);
+            const id = form.get("id");
+
+            if (ObjectId.isValid(id)) {
+                await items.deleteOne({ _id: new ObjectId(id) });
+            }
+
+            res.writeHead(302, { Location: "/dashboard" });
+            return res.end();
+        }
+
+        // Logout
+        if (req.method === "GET" && pageUrl.pathname === "/logout") {
+            const cookie = req.headers.cookie || "";
+            const parts = cookie.split(";");
+            for (let i = 0; i < parts.length; i++) {
+                const item = parts[i].trim();
+                if (item.startsWith("studentSession=")) {
+                    const sessionId = item.substring("studentSession=".length);
+                    sessions.delete(sessionId);
+                }
+            }
+            res.writeHead(302, {
+                "Set-Cookie": "studentSession=; Max-Age=0; Path=/",
+                "Location": "/login.html"
+            });
+            return res.end();
+        }
+
+        // Page not found
+        res.writeHead(404, { "Content-Type": "text/plain" });
+        res.end("Page not found");
+
+    } catch (error) {
+        console.log("Server error:", error);
+        res.writeHead(500, { "Content-Type": "text/plain" });
+        res.end("Something went wrong. Check the terminal.");
+    }
 });
 
-// 5. Report a New Lost or Found Item
-app.post('/api/items', async (req, res) => {
-  try {
-    const {
-      type,
-      title,
-      category,
-      description,
-      date,
-      location,
-      collectFrom,
-      reporterName,
-      reporterRoll,
-      reporterPhone,
-      reporterEmail
-    } = req.body;
+// Seed initial admin and demo items if collections are empty
+async function seedInitialData() {
+    try {
+        const adminUser = await users.findOne({ email: "admin@campus.edu" });
+        if (!adminUser) {
+            const salt = crypto.randomBytes(16).toString("hex");
+            const passwordHash = makePasswordHash("admin123", salt);
+            await users.insertOne({
+                name: "Administrator",
+                rollNo: "ADMIN01",
+                phone: "9876543210",
+                email: "admin@campus.edu",
+                passwordHash: passwordHash,
+                salt: salt,
+                role: "admin"
+            });
+            console.log("✔ Created default admin user: admin@campus.edu / admin123");
+        }
 
-    // Basic Validation
-    if (!type || !title || !description || !date || !location || !reporterName) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please fill in all required fields (Title, Description, Date, Location, and Your Name).'
-      });
+        const count = await items.countDocuments();
+        if (count === 0) {
+            await items.insertMany([
+                {
+                    type: "Found",
+                    title: "Casio Scientific Calculator fx-991EX",
+                    category: "Electronics",
+                    date: "2026-11-02",
+                    location: "Central Library, 1st Floor",
+                    collectFrom: "Library Reception Desk",
+                    description: "Black calculator found on reading desk.",
+                    reporterName: "Library Staff",
+                    reporterRoll: "STAFF01",
+                    reporterEmail: "admin@campus.edu",
+                    contactPhone: "9123456780",
+                    status: "Active",
+                    returnedTo: "",
+                    returnedDate: ""
+                },
+                {
+                    type: "Lost",
+                    title: "Blue Spiral Notebook",
+                    category: "Books & Stationery",
+                    date: "2026-11-01",
+                    location: "Main Science Block, Room 204",
+                    collectFrom: "Science Dept Office",
+                    description: "Notes for Data Structures with blue cover.",
+                    reporterName: "Meriin K Joseph",
+                    reporterRoll: "26CSEL40",
+                    reporterEmail: "merin@campus.edu",
+                    contactPhone: "9876543210",
+                    status: "Active",
+                    returnedTo: "",
+                    returnedDate: ""
+                },
+                {
+                    type: "Lost",
+                    title: "Student Identity Card",
+                    category: "ID & Cards",
+                    date: "2026-10-30",
+                    location: "Campus Cafeteria",
+                    collectFrom: "Main Security Desk",
+                    description: "College ID card in blue lanyard.",
+                    reporterName: "Rahul Sharma",
+                    reporterRoll: "24BCS015",
+                    reporterEmail: "rahul@campus.edu",
+                    contactPhone: "9876501234",
+                    status: "Returned",
+                    returnedTo: "Rahul Sharma",
+                    returnedDate: "2026-11-03"
+                }
+            ]);
+            console.log("✔ Seeded starter Lost & Found items");
+        }
+    } catch (e) {
+        console.log("Seeding note:", e.message);
+    }
+}
+
+// Connect to MongoDB first, then start the server.
+async function startServer() {
+    try {
+        console.log("Connecting to MongoDB Atlas Database...");
+        await client.connect();
+        console.log("MongoDB connected successfully");
+    } catch (err) {
+        console.log("Could not connect to Cloud MongoDB, trying local MongoDB fallback...");
+        client = new MongoClient(LOCAL_MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
+        await client.connect();
+        console.log("Local MongoDB connected successfully");
     }
 
-    // Create item
-    const newItem = await Item.create({
-      type,
-      title: title.trim(),
-      category: category || 'Others',
-      description: description.trim(),
-      date: date.trim(),
-      location: location.trim(),
-      collectFrom: collectFrom ? collectFrom.trim() : 'Admin Reception',
-      reporterName: reporterName.trim(),
-      reporterRoll: reporterRoll ? reporterRoll.trim() : '',
-      reporterPhone: reporterPhone ? reporterPhone.trim() : '',
-      reporterEmail: reporterEmail ? reporterEmail.trim() : '',
-      status: 'Active'
+    const db = client.db("campusLostFoundDB");
+    users = db.collection("users");
+    items = db.collection("items");
+
+    await seedInitialData();
+
+    // Run on Port 3000
+    const PORT = process.env.PORT || 3000;
+
+    server.on("error", function (err) {
+        console.log("Server error:", err.message);
     });
 
-    res.status(201).json({
-      success: true,
-      message: `${type} item report submitted successfully!`,
-      item: newItem
+    server.listen(PORT, function () {
+        console.log(`Website running at http://localhost:${PORT}`);
     });
-  } catch (error) {
-    console.error('Create Item Error:', error);
-    res.status(500).json({ success: false, message: 'Failed to report item.' });
-  }
-});
+}
 
-// 6. Mark Item as Returned / Handed Over
-app.put('/api/items/:id/return', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { returnedToName, returnedToRoll, returnedDate, remarks } = req.body;
-
-    if (!returnedToName) {
-      return res.status(400).json({
-        success: false,
-        message: 'Recipient name (who collected the item) is required.'
-      });
-    }
-
-    const updatedItem = await Item.findByIdAndUpdate(
-      id,
-      {
-        status: 'Returned',
-        returnedToName: returnedToName.trim(),
-        returnedToRoll: returnedToRoll ? returnedToRoll.trim() : '',
-        returnedDate: returnedDate || new Date().toISOString().split('T')[0],
-        remarks: remarks ? remarks.trim() : 'Handed over to rightful owner'
-      },
-      { new: true }
-    );
-
-    if (!updatedItem) {
-      return res.status(404).json({ success: false, message: 'Item not found.' });
-    }
-
-    res.json({
-      success: true,
-      message: `"${updatedItem.title}" has been successfully marked as Returned!`,
-      item: updatedItem
-    });
-  } catch (error) {
-    console.error('Return Item Error:', error);
-    res.status(500).json({ success: false, message: 'Failed to update item status.' });
-  }
-});
-
-// 7. Delete an Item
-app.delete('/api/items/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deleted = await Item.findByIdAndDelete(id);
-
-    if (!deleted) {
-      return res.status(404).json({ success: false, message: 'Item not found.' });
-    }
-
-    res.json({
-      success: true,
-      message: 'Item record deleted successfully.'
-    });
-  } catch (error) {
-    console.error('Delete Item Error:', error);
-    res.status(500).json({ success: false, message: 'Failed to delete item.' });
-  }
-});
-
-// ------------------------------------------------------------------------------
-// Start Server
-// ------------------------------------------------------------------------------
-app.listen(PORT, () => {
-  console.log('====================================================');
-  console.log(`  🎓 Campus Lost & Found System (Mini Project)      `);
-  console.log(`  Server running at: http://localhost:${PORT}        `);
-  console.log('====================================================\n');
-  
-  // Connect to Database
-  connectToDatabase();
+startServer().catch(function (error) {
+    console.log("Could not connect to MongoDB");
+    console.log(error);
 });

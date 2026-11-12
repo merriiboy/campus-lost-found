@@ -21,6 +21,14 @@ let items;
 // A simple in-memory list of logged-in user sessions.
 const sessions = new Map();
 
+// Prevent server crashing on unexpected errors
+process.on("uncaughtException", function (err) {
+    console.error("Uncaught Exception:", err.message);
+});
+process.on("unhandledRejection", function (reason) {
+    console.error("Unhandled Rejection:", reason);
+});
+
 // Convert special characters before displaying database text in HTML.
 function safeText(value) {
     return String(value || "")
@@ -610,16 +618,24 @@ async function startServer() {
 
     await seedInitialData();
 
-    // Run on Port 3000
-    const PORT = process.env.PORT || 3000;
+    // Run on Port 3000 (with automatic fallback to 3001 if port 3000 is busy)
+    function startListening(portToTry) {
+        server.once("error", function (err) {
+            if (err.code === "EADDRINUSE" && portToTry < 3005) {
+                console.log(`Port ${portToTry} is busy, switching to port ${portToTry + 1}...`);
+                startListening(portToTry + 1);
+            } else {
+                console.log("Server error:", err.message);
+            }
+        });
 
-    server.on("error", function (err) {
-        console.log("Server error:", err.message);
-    });
+        server.listen(portToTry, function () {
+            console.log(`Website running at http://localhost:${server.address().port}`);
+        });
+    }
 
-    server.listen(PORT, function () {
-        console.log(`Website running at http://localhost:${PORT}`);
-    });
+    const START_PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+    startListening(START_PORT);
 }
 
 startServer().catch(function (error) {

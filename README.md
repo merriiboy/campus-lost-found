@@ -40,7 +40,55 @@ campus-lost-found/
 
 ---
 
-## 🚀 Running the Project
+## 🏫 How to Run in College Lab Examination (Step-by-Step)
+
+Follow these exact steps when sitting at the college lab computer in front of the examiners:
+
+### Step 1: Download from GitHub
+1. Open Google Chrome or Edge.
+2. Sign in to GitHub and open:
+   ```
+   https://github.com/merriiboy/campus-lost-found
+   ```
+3. Click the green **`<> Code`** button and select **`Download ZIP`**.
+4. Extract the downloaded ZIP file to the **Desktop** or **Downloads** folder.
+
+### Step 2: Start the System (1-Click)
+1. Open the extracted folder `campus-lost-found-main`.
+2. Double-click **`start.bat`**.
+   * It will automatically detect if `node_modules` is missing and run `npm install` for you.
+   * You will see:
+     ```
+     Connecting to MongoDB Atlas Database...
+     MongoDB connected successfully
+     Website running at http://localhost:3000
+     ```
+
+### Step 3: Open the Website in Browser
+1. In Chrome / Edge, open a new tab and go to:
+   ```
+   http://localhost:3000
+   ```
+2. Log in using the Admin account:
+   * **Email:** `admin@campus.edu`
+   * **Password:** `admin123`
+   *(Or register a new student account live to demonstrate registration!)*
+
+### Step 4: Show Live MongoDB Connection to Examiners
+1. Open another browser tab and go to:
+   ```
+   https://cloud.mongodb.com
+   ```
+2. Sign in to your MongoDB Atlas account.
+3. Click **Browse Collections** under Database Deployments.
+4. Open the `campusLostFoundDB` database:
+   * **`users` collection**: Show the registered students.
+   * **`items` collection**: Show the reported lost and found items.
+5. **Live Demo for Examiners**: Report a new item on `http://localhost:3000` (e.g., "Casio Calculator"). Refresh the MongoDB Atlas `items` collection tab in front of the examiner — the new item appears instantly in real-time!
+
+---
+
+## 🚀 Running the Project (Manual Terminal Method)
 
 ### Method A: One-Click Windows Launcher
 Double-click `start.bat` in the project folder.

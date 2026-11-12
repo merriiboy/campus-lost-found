@@ -117,5 +117,5 @@ campus-lost-found/
 
 - **Project:** Campus Lost and Found Management System
 - **Developer:** Merin
-- **Course:** Computer Science & Engineering
+- **Course:** Computer Science & Electronics
 - **Academic Year:** 2026

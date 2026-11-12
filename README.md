@@ -1,146 +1,121 @@
-# 🎓 Campus Lost & Found System
-**A Simple Student Mini-Project**  
-*Built with: Pure HTML5, CSS3, Vanilla JavaScript, Pure Node.js (HTTP module), and MongoDB*  
-*Copyright: merin@2026*
+# Campus Lost and Found Management System
+
+A web-based portal developed to manage and streamline lost and found items across a college campus. The system allows students and staff to report lost personal belongings, register found items, and coordinate returns securely.
 
 ---
 
 ## 📌 Project Overview
-The **Campus Lost & Found System** is a lightweight, academic web application built for college campuses. It helps students, faculty, and campus security staff report missing personal belongings (such as calculators, ID cards, notebooks, keys, phones) and return found items to their rightful owners.
 
-### 🌟 100% Beginner-Friendly & Humanized:
-- **No Express.js**: Uses Node.js built-in `http` module from the standard syllabus.
-- **No Mongoose**: Uses the official `mongodb` driver (`MongoClient`, `ObjectId`).
-- **No External CSS Frameworks**: Built with pure, clean CSS (`style.css`).
-- **No Frontend Libraries**: No React, no Vite, no TypeScript.
-- **Built-in Security**: Passwords are securely hashed using Node.js standard `crypto.scryptSync()`.
-- **Sessions**: Uses simple HTTP cookies (`studentSession=...`) with an in-memory `Map`.
+In a busy college campus, students and staff frequently misplace personal belongings such as ID cards, calculators, notebooks, bags, and electronic accessories. The **Campus Lost and Found Management System** provides a centralized digital platform to:
+- Report lost belongings with location and contact details.
+- Post found items with designated collection points.
+- Search and filter records by item category, status, and keywords.
+- Mark items as returned once collected by their rightful owners.
+- Generate and print structured summary reports.
 
 ---
 
-## 🗂️ Project File Structure
+## 🛠️ Technology Stack
+
+| Component | Technology Used | Description |
+| :--- | :--- | :--- |
+| **Frontend** | HTML5, CSS3, JavaScript | Clean, responsive user interface with client-side form validation |
+| **Backend** | Node.js (Core `http` module) | Lightweight server handling HTTP routing and session management |
+| **Database** | MongoDB | Document database for storing student records and item data |
+| **Security** | Node.js `crypto` module | Salted cryptographic password hashing (`crypto.scryptSync`) |
+
+---
+
+## ✨ Features
+
+1. **User Authentication & Profiles:**
+   - Student self-registration with roll number, email, and contact number.
+   - Secure login session management using HTTP cookies.
+   - Built-in administrator account for overall campus monitoring.
+
+2. **Lost & Found Reporting:**
+   - Categorized reporting (Electronics, Books & Stationery, ID & Cards, Bags, Keys, etc.).
+   - Date, campus location, and description tracking.
+   - Designated collection points for found items (e.g. Security Desk, Library Counter).
+
+3. **Feed & Real-Time Filtering:**
+   - Filter items by status: *All*, *Lost*, *Found*, or *Returned*.
+   - Live search by keyword, item title, or location.
+
+4. **Return Tracking:**
+   - One-click status update marking an item as returned with the collector's name and return date.
+
+5. **Printable Reports:**
+   - One-click report generation with a dedicated print view (`window.print()`) for campus administration and notice boards.
+
+---
+
+## 🗂️ Project Structure
+
 ```
 campus-lost-found/
-│
-├── public/                     # Static files sent to the browser
-│   ├── index.html              # Home welcome page
-│   ├── register.html           # Student registration page
-│   ├── login.html              # Student and Admin login page
-│   ├── style.css               # Clean custom styling (matching class notes)
-│   └── script.js               # Client-side form validation and print feature
-│
-├── .env                        # MongoDB connection string
-├── .env.example                # Example environment file
-├── .gitignore                  # Git ignore rules
-├── package.json                # Project dependencies (only mongodb)
-├── server.js                   # Pure Node.js HTTP server and database logic
-├── start.bat                   # 1-Click launcher for Windows
-└── README.md                   # Project documentation and Viva preparation guide
+├── public/
+│   ├── index.html         # Welcome landing page
+│   ├── register.html      # Student registration form
+│   ├── login.html         # Student and Administrator login form
+│   ├── style.css          # Primary stylesheet
+│   └── script.js          # Client-side validation and print handling
+├── package.json           # Project metadata and dependencies
+├── server.js              # HTTP server and database logic
+├── start.bat              # Windows startup script
+└── README.md              # Project documentation
 ```
 
 ---
 
-## 🏫 How to Run in College Lab Examination (Step-by-Step)
+## 🚀 Installation & Running the Project
 
-Follow these exact steps when sitting at the college lab computer in front of the examiners:
+### Prerequisites
+- [Node.js](https://nodejs.org/) (Version 16 or later recommended)
+- Web browser (Chrome, Edge, or Firefox)
 
-### Step 1: Download from GitHub
-1. Open Google Chrome or Edge.
-2. Sign in to GitHub and open:
+### Steps to Run
+
+1. **Clone or Download the Repository:**
+   ```bash
+   git clone https://github.com/merriiboy/campus-lost-found.git
+   cd campus-lost-found
    ```
-   https://github.com/merriiboy/campus-lost-found
+
+2. **Install Dependencies:**
+   ```bash
+   npm install
    ```
-3. Click the green **`<> Code`** button and select **`Download ZIP`**.
-4. Extract the downloaded ZIP file to the **Desktop** or **Downloads** folder.
 
-### Step 2: Start the System (1-Click)
-1. Open the extracted folder `campus-lost-found-main`.
-2. Double-click **`start.bat`**.
-   * It will automatically detect if `node_modules` is missing and run `npm install` for you.
-   * You will see:
-     ```
-     Connecting to MongoDB Atlas Database...
-     MongoDB connected successfully
-     Website running at http://localhost:3000
-     ```
+3. **Start the Server:**
+   ```bash
+   npm start
+   ```
+   *(or `node server.js`)*
 
-### Step 3: Open the Website in Browser
-1. In Chrome / Edge, open a new tab and go to:
+4. **Access the Application:**
+   Open your browser and navigate to:
    ```
    http://localhost:3000
    ```
-2. Log in using the Admin account:
-   * **Email:** `admin@campus.edu`
-   * **Password:** `admin123`
-   *(Or register a new student account live to demonstrate registration!)*
 
-### Step 4: Show Live MongoDB Connection to Examiners
-1. Open another browser tab and go to:
-   ```
-   https://cloud.mongodb.com
-   ```
-2. Sign in to your MongoDB Atlas account.
-3. Click **Browse Collections** under Database Deployments.
-4. Open the `campusLostFoundDB` database:
-   * **`users` collection**: Show the registered students.
-   * **`items` collection**: Show the reported lost and found items.
-5. **Live Demo for Examiners**: Report a new item on `http://localhost:3000` (e.g., "Casio Calculator"). Refresh the MongoDB Atlas `items` collection tab in front of the examiner — the new item appears instantly in real-time!
+*(On Windows, you can also launch the application directly by double-clicking `start.bat`)*
 
 ---
 
-## 🚀 Running the Project (Manual Terminal Method)
+## 🔐 Default Demo Credentials
 
-### Method A: One-Click Windows Launcher
-Double-click `start.bat` in the project folder.
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| **Administrator** | `admin@campus.edu` | `admin123` |
 
-### Method B: Terminal Command
-```bash
-npm start
-```
-Or directly:
-```bash
-node server.js
-```
-
-### 🌐 Open in Browser
-Visit:
-```
-http://localhost:3000
-```
-*(If port 3000 is occupied by another application, the server automatically runs on `http://localhost:3001`)*
+*New students can also be registered directly through the registration page.*
 
 ---
 
-## 🔐 Default Admin / Demo Credentials
-- **Email**: `admin@campus.edu`
-- **Password**: `admin123`
+## 👤 Author & Academic Details
 
----
-
-## 🎓 Viva Voce & Guide Interview Preparation
-
-### Q1: Why did you NOT use Express.js or other frameworks?
-> **Answer**:  
-> "I used the built-in Node.js `http` module (`http.createServer()`) directly from our class notes. This demonstrates a core understanding of how web servers handle HTTP requests, headers, and responses at the fundamental level without relying on third-party framework abstractions."
-
-### Q2: How does the server handle user sessions and authentication?
-> **Answer**:  
-> "When a student logs in, the server generates a random 16-byte session token using `crypto.randomBytes(16)`. The server stores this in an in-memory `Map` linked to the student's email, and sends it to the browser as an `HttpOnly` cookie named `studentSession`. On every subsequent request, the server reads the cookie header to identify the logged-in student."
-
-### Q3: How is password security implemented?
-> **Answer**:  
-> "Passwords are never saved in plain text. When a user registers, we generate a random 16-byte cryptographic salt and use Node.js built-in `crypto.scryptSync(password, salt, 64)` to compute a one-way password hash. During login, the entered password is hashed with the stored salt and compared."
-
-### Q4: How is data stored in MongoDB?
-> **Answer**:  
-> "We use the official `mongodb` driver (`MongoClient`). The database `campusLostFoundDB` contains two collections: `users` for student accounts, and `items` for lost and found reports. Each item record stores the item name, category, date, location, description, reporter details, and status (`Active` or `Returned`)."
-
-### Q5: How does the search and filter mechanism work?
-> **Answer**:  
-> "In `server.js`, the `/dashboard` route reads the `filter` and `search` query parameters from the URL. It builds a MongoDB query using `$regex` with the case-insensitive option (`$options: 'i'`), queries the `items` collection, and dynamically generates the HTML table rows."
-
----
-
-## 📄 License & Attribution
-Academic Mini-Project Submission.  
-© 2026 Merin. All Rights Reserved.
+- **Project:** Campus Lost and Found Management System
+- **Developer:** Merin
+- **Course:** Computer Science & Engineering
+- **Academic Year:** 2026
